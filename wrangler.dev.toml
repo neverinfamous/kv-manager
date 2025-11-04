@@ -1,0 +1,44 @@
+# KV Manager - Local Development Configuration
+# Used for: npx wrangler dev --config wrangler.dev.toml --local
+
+name = "kv-manager-dev"
+main = "worker/index.ts"
+compatibility_date = "2025-01-01"
+node_compat = true
+
+# No build step for development (frontend runs separately via Vite)
+# Frontend: npm run dev (runs on localhost:5173)
+# Worker: npx wrangler dev --config wrangler.dev.toml --local (runs on localhost:8787)
+
+# Local D1 database for development
+[[d1_databases]]
+binding = "METADATA_DB"
+database_name = "kv-manager-metadata-dev"
+database_id = "local-dev-database"
+
+# Durable Objects bindings (local)
+[[durable_objects.bindings]]
+name = "BULK_OPERATION_DO"
+class_name = "BulkOperationDO"
+script_name = "kv-manager-dev"
+
+[[durable_objects.bindings]]
+name = "IMPORT_EXPORT_DO"
+class_name = "ImportExportDO"
+script_name = "kv-manager-dev"
+
+# Durable Object migrations
+[[migrations]]
+tag = "v1"
+new_classes = ["BulkOperationDO", "ImportExportDO"]
+
+# Development environment variables
+[vars]
+ENVIRONMENT = "development"
+
+# Local development notes:
+# - Authentication is bypassed for localhost requests
+# - Mock data is returned when no real Cloudflare credentials are provided
+# - No secrets required for local development
+# - CORS is configured to allow http://localhost:5173
+
