@@ -1,5 +1,7 @@
 # KV Manager for Cloudflare
 
+* Last Updated November 4, 2025 *
+
 [![GitHub](https://img.shields.io/badge/GitHub-neverinfamous/kv--manager-blue?logo=github)](https://github.com/neverinfamous/kv-manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 ![Version](https://img.shields.io/badge/version-v1.0.0-yellow)
