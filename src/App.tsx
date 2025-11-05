@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { api, type KVNamespace } from './services/api'
+import { api, type KVNamespace, type KVKey } from './services/api'
 import { auth } from './services/auth'
 import { useTheme } from './hooks/useTheme'
-import { Database, Plus, Moon, Sun, Monitor, Loader2 } from 'lucide-react'
+import { Database, Plus, Moon, Sun, Monitor, Loader2, Trash2, Key, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -39,6 +39,13 @@ export default function App() {
   
   // Bulk operations state
   const [selectedNamespaces, setSelectedNamespaces] = useState<string[]>([])
+  
+  // Key browser state
+  const [keys, setKeys] = useState<KVKey[]>([])
+  const [keysLoading, setKeysLoading] = useState(false)
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([])
+  const [keyPrefix, setKeyPrefix] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   // Load namespaces on mount
   useEffect(() => {
@@ -119,6 +126,78 @@ export default function App() {
     })
   }
 
+  const handleBulkDeleteNamespaces = async () => {
+    if (selectedNamespaces.length === 0) return
+    
+    if (!confirm(`Are you sure you want to delete ${selectedNamespaces.length} namespace(s)? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      setDeleting(true)
+      await Promise.all(selectedNamespaces.map(id => api.deleteNamespace(id)))
+      setSelectedNamespaces([])
+      await loadNamespaces()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete namespaces')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const loadKeys = async (namespaceId: string) => {
+    try {
+      setKeysLoading(true)
+      setError('')
+      const response = await api.listKeys(namespaceId, { prefix: keyPrefix || undefined })
+      setKeys(response.keys)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load keys')
+    } finally {
+      setKeysLoading(false)
+    }
+  }
+
+  const toggleKeySelection = (keyName: string) => {
+    setSelectedKeys(prev => {
+      if (prev.includes(keyName)) {
+        return prev.filter(name => name !== keyName)
+      } else {
+        return [...prev, keyName]
+      }
+    })
+  }
+
+  const handleBulkDeleteKeys = async (namespaceId: string) => {
+    if (selectedKeys.length === 0) return
+    
+    if (!confirm(`Are you sure you want to delete ${selectedKeys.length} key(s)? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      setDeleting(true)
+      await api.bulkDeleteKeys(namespaceId, selectedKeys)
+      setSelectedKeys([])
+      await loadKeys(namespaceId)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete keys')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  // Load keys when viewing a namespace
+  useEffect(() => {
+    if (currentView.type === 'namespace') {
+      loadKeys(currentView.namespaceId)
+    } else {
+      setKeys([])
+      setSelectedKeys([])
+      setKeyPrefix('')
+    }
+  }, [currentView, keyPrefix])
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -193,6 +272,39 @@ export default function App() {
                 <Button onClick={() => setShowCreateDialog(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Namespace
+                </Button>
+              </div>
+            )}
+
+            {/* Bulk Actions Bar */}
+            {selectedNamespaces.length > 0 && (
+              <div className="bg-primary/10 border border-primary rounded-lg p-4 mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    checked={selectedNamespaces.length === namespaces.length}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedNamespaces(namespaces.map(ns => ns.id))
+                      } else {
+                        setSelectedNamespaces([])
+                      }
+                    }}
+                  />
+                  <span className="font-medium">
+                    {selectedNamespaces.length} namespace{selectedNamespaces.length !== 1 ? 's' : ''} selected
+                  </span>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDeleteNamespaces}
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deleting...</>
+                  ) : (
+                    <><Trash2 className="h-4 w-4 mr-2" /> Delete Selected</>
+                  )}
                 </Button>
               </div>
             )}
@@ -278,16 +390,158 @@ export default function App() {
             >
               ← Back to Namespaces
             </Button>
-            <div className="text-center py-12">
-              <Database className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Key Browser</h3>
-              <p className="text-muted-foreground">
-                Namespace: <span className="font-mono">{currentView.namespaceTitle}</span>
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Key browsing interface coming soon...
-              </p>
+
+            {/* Key Browser Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-3xl font-bold">Keys</h2>
+                <p className="text-muted-foreground mt-1">
+                  <span className="font-mono">{currentView.namespaceTitle}</span> • {keys.length} {keys.length === 1 ? 'key' : 'keys'}
+                </p>
+              </div>
             </div>
+
+            {/* Search/Filter Bar */}
+            <div className="flex gap-4 mb-6">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Filter by prefix..."
+                    value={keyPrefix}
+                    onChange={(e) => setKeyPrefix(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Bulk Actions Bar */}
+            {selectedKeys.length > 0 && (
+              <div className="bg-primary/10 border border-primary rounded-lg p-4 mb-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    checked={selectedKeys.length === keys.length}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedKeys(keys.map(k => k.name))
+                      } else {
+                        setSelectedKeys([])
+                      }
+                    }}
+                  />
+                  <span className="font-medium">
+                    {selectedKeys.length} key{selectedKeys.length !== 1 ? 's' : ''} selected
+                  </span>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleBulkDeleteKeys(currentView.namespaceId)}
+                  disabled={deleting}
+                >
+                  {deleting ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deleting...</>
+                  ) : (
+                    <><Trash2 className="h-4 w-4 mr-2" /> Delete Selected</>
+                  )}
+                </Button>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg mb-6">
+                {error}
+              </div>
+            )}
+
+            {/* Loading State */}
+            {keysLoading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!keysLoading && keys.length === 0 && (
+              <div className="text-center py-12">
+                <Key className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No keys found</h3>
+                <p className="text-muted-foreground mb-4">
+                  {keyPrefix ? `No keys match the prefix "${keyPrefix}"` : 'This namespace is empty'}
+                </p>
+              </div>
+            )}
+
+            {/* Keys Table */}
+            {!keysLoading && keys.length > 0 && (
+              <div className="border rounded-lg">
+                <table className="w-full">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="w-12 p-4">
+                        <Checkbox
+                          checked={selectedKeys.length === keys.length}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedKeys(keys.map(k => k.name))
+                            } else {
+                              setSelectedKeys([])
+                            }
+                          }}
+                        />
+                      </th>
+                      <th className="text-left p-4 font-semibold">Key Name</th>
+                      <th className="text-left p-4 font-semibold">Expiration</th>
+                      <th className="w-24 p-4"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {keys.map((key) => {
+                      const isSelected = selectedKeys.includes(key.name)
+                      return (
+                        <tr 
+                          key={key.name} 
+                          className={`border-t hover:bg-muted/50 ${isSelected ? 'bg-primary/5' : ''}`}
+                        >
+                          <td className="p-4">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleKeySelection(key.name)}
+                            />
+                          </td>
+                          <td className="p-4">
+                            <div className="font-mono text-sm">{key.name}</div>
+                          </td>
+                          <td className="p-4 text-sm text-muted-foreground">
+                            {key.expiration ? new Date(key.expiration * 1000).toLocaleString() : 'Never'}
+                          </td>
+                          <td className="p-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                if (confirm(`Delete key "${key.name}"?`)) {
+                                  try {
+                                    await api.deleteKey(currentView.namespaceId, key.name)
+                                    await loadKeys(currentView.namespaceId)
+                                  } catch (err) {
+                                    setError(err instanceof Error ? err.message : 'Failed to delete key')
+                                  }
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </main>
