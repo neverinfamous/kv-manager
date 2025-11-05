@@ -218,6 +218,8 @@ export function KeyEditorDialog({
                   )}
                 </div>
                 <Textarea
+                  id="key-value-editor"
+                  name="key-value"
                   value={getDisplayValue()}
                   onChange={(e) => {
                     setValue(e.target.value)

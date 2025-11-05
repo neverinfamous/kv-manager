@@ -189,13 +189,13 @@ export default function App() {
     }
   }
 
-  const loadKeys = useCallback(async (namespaceId: string, append = false) => {
+  const loadKeys = useCallback(async (namespaceId: string, append = false, cursor?: string) => {
     try {
       setKeysLoading(true)
       setError('')
       const response = await api.listKeys(namespaceId, { 
         prefix: keyPrefix || undefined,
-        cursor: append ? keysCursor : undefined
+        cursor: append ? cursor : undefined
       })
       setKeys(prev => append ? [...prev, ...response.keys] : response.keys)
       setKeysCursor(response.cursor)
@@ -205,10 +205,10 @@ export default function App() {
     } finally {
       setKeysLoading(false)
     }
-  }, [keyPrefix, keysCursor])
+  }, [keyPrefix])
 
   const loadMoreKeys = async (namespaceId: string) => {
-    await loadKeys(namespaceId, true)
+    await loadKeys(namespaceId, true, keysCursor)
   }
 
   const handleCreateKey = async () => {
@@ -260,7 +260,7 @@ export default function App() {
       // Reset pagination and reload keys
       setKeysCursor(undefined)
       setKeysListComplete(true)
-      await loadKeys(currentView.namespaceId)
+      await loadKeys(currentView.namespaceId, false, undefined)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create key')
     } finally {
@@ -289,7 +289,9 @@ export default function App() {
       setDeleting(true)
       await api.bulkDeleteKeys(namespaceId, selectedKeys)
       setSelectedKeys([])
-      await loadKeys(namespaceId)
+      setKeysCursor(undefined)
+      setKeysListComplete(true)
+      await loadKeys(namespaceId, false, undefined)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete keys')
     } finally {
@@ -658,7 +660,7 @@ export default function App() {
                                       await api.deleteKey(currentView.namespaceId, key.name)
                                       setKeysCursor(undefined)
                                       setKeysListComplete(true)
-                                      await loadKeys(currentView.namespaceId)
+                                      await loadKeys(currentView.namespaceId, false, undefined)
                                     } catch (err) {
                                       setError(err instanceof Error ? err.message : 'Failed to delete key')
                                     }
@@ -864,9 +866,11 @@ export default function App() {
           namespaceId={currentView.namespaceId}
           keyName={selectedKeyForEdit}
           onSaved={() => {
+            // Reload keys from the beginning
             setKeysCursor(undefined)
             setKeysListComplete(true)
-            loadKeys(currentView.namespaceId)
+            // Call loadKeys without cursor to get fresh data
+            loadKeys(currentView.namespaceId, false, undefined)
           }}
         />
       )}
