@@ -1,0 +1,115 @@
+import type { Env } from './types';
+import { validateAccessJWT } from './utils/auth';
+import { getCorsHeaders, handleCorsPreflightRequest, isLocalDevelopment } from './utils/cors';
+import { handleNamespaceRoutes } from './routes/namespaces';
+import { handleKeyRoutes } from './routes/keys';
+import { handleMetadataRoutes } from './routes/metadata';
+import { handleSearchRoutes } from './routes/search';
+import { handleBackupRoutes } from './routes/backup';
+import { handleImportExportRoutes } from './routes/import-export';
+import { handleAuditRoutes } from './routes/audit';
+
+/**
+ * Main request handler
+ */
+async function handleApiRequest(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  console.log('[Request]', request.method, url.pathname);
+
+  // Handle CORS
+  const corsHeaders = getCorsHeaders(request);
+  if (request.method === 'OPTIONS') {
+    return handleCorsPreflightRequest(corsHeaders);
+  }
+
+  // If not an API request, serve static assets
+  if (!url.pathname.startsWith('/api/')) {
+    return env.ASSETS.fetch(request);
+  }
+
+  // Authentication
+  const isLocalhost = isLocalDevelopment(request);
+  let userEmail: string | null = null;
+
+  if (isLocalhost) {
+    console.log('[Auth] Localhost detected, skipping JWT validation');
+    userEmail = 'dev@localhost';
+  } else {
+    userEmail = await validateAccessJWT(request, env);
+    if (!userEmail) {
+      return new Response('Unauthorized', { status: 401, headers: corsHeaders });
+    }
+  }
+
+  // Check if we're in local dev mode (no credentials)
+  const isLocalDev = isLocalhost && (!env.ACCOUNT_ID || !env.API_KEY);
+
+  // Route API requests
+  if (url.pathname.startsWith('/api/namespaces')) {
+    return await handleNamespaceRoutes(request, env, url, corsHeaders, isLocalDev, userEmail);
+  }
+
+  if (url.pathname.startsWith('/api/keys')) {
+    return await handleKeyRoutes(request, env, url, corsHeaders, isLocalDev, userEmail);
+  }
+
+  if (url.pathname.startsWith('/api/metadata')) {
+    return await handleMetadataRoutes(request, env, url, corsHeaders, isLocalDev, userEmail);
+  }
+
+  if (url.pathname.startsWith('/api/search')) {
+    return await handleSearchRoutes(request, env, url, corsHeaders, isLocalDev, userEmail);
+  }
+
+  if (url.pathname.startsWith('/api/backup')) {
+    return await handleBackupRoutes(request, env, url, corsHeaders, isLocalDev, userEmail);
+  }
+
+  if (url.pathname.startsWith('/api/export') || url.pathname.startsWith('/api/import') || url.pathname.startsWith('/api/jobs')) {
+    return await handleImportExportRoutes(request, env, url, corsHeaders, isLocalDev, userEmail);
+  }
+
+  if (url.pathname.startsWith('/api/audit')) {
+    return await handleAuditRoutes(request, env, url, corsHeaders, isLocalDev, userEmail);
+  }
+
+  // 404 for unknown API routes
+  return new Response(
+    JSON.stringify({ error: 'Not Found', message: `Route ${url.pathname} not found` }),
+    {
+      status: 404,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    }
+  );
+}
+
+/**
+ * Cloudflare Worker Entry Point
+ */
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    try {
+      return await handleApiRequest(request, env);
+    } catch (err) {
+      console.error('[Worker] Unhandled error:', err);
+      const corsHeaders = getCorsHeaders(request);
+      return new Response(
+        JSON.stringify({
+          error: 'Internal Server Error',
+          message: 'An unexpected error occurred. Please try again later.'
+        }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        }
+      );
+    }
+  }
+};
+
+/**
+ * Durable Object Exports
+ */
+export { BulkOperationDO } from './durable-objects/BulkOperationDO';
+export { ImportExportDO } from './durable-objects/ImportExportDO';
+

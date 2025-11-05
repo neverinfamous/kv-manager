@@ -1,38 +1,26 @@
 # KV Manager - Production Configuration Template
-# Copy this file to wrangler.toml and fill in your values
+# Copy this to wrangler.toml and fill in your values
 
 name = "kv-manager"
 main = "worker/index.ts"
 compatibility_date = "2025-01-01"
 node_compat = true
 
-# Uncomment and configure for custom domain
-# routes = [
-#   { pattern = "kv.yourdomain.com", custom_domain = true }
-# ]
-
-# Or use workers.dev subdomain (default)
-# Your Worker will be available at: https://kv-manager.your-account.workers.dev
-
-# Build configuration
+# Build configuration for production
 [build]
 command = "npm run build"
-cwd = "./"
-watch_dirs = ["src", "worker"]
 
-# Build output
+# Static assets binding (your built frontend)
 [site]
 bucket = "./dist"
 
-# D1 Metadata Database
-# Create with: npx wrangler d1 create kv-manager-metadata
-# Initialize with: npx wrangler d1 execute kv-manager-metadata --remote --file=worker/schema.sql
+# Production D1 database
 [[d1_databases]]
-binding = "METADATA_DB"
+binding = "METADATA"
 database_name = "kv-manager-metadata"
-database_id = "YOUR_D1_DATABASE_ID"  # Get from d1 create command
+database_id = "YOUR_D1_DATABASE_ID" # Get this from: wrangler d1 create kv-manager-metadata
 
-# Durable Objects for bulk operations
+# Durable Objects bindings
 [[durable_objects.bindings]]
 name = "BULK_OPERATION_DO"
 class_name = "BulkOperationDO"
@@ -48,20 +36,17 @@ script_name = "kv-manager"
 tag = "v1"
 new_classes = ["BulkOperationDO", "ImportExportDO"]
 
-# Environment variables (non-sensitive)
+# Production environment variables
 [vars]
 ENVIRONMENT = "production"
 
-# Secrets (set with: npx wrangler secret put SECRET_NAME)
-# Required secrets:
-# - ACCOUNT_ID: Your Cloudflare account ID
-# - API_KEY: Cloudflare API token with Account D1 Edit and Workers KV Storage Edit permissions
-# - TEAM_DOMAIN: Your Cloudflare Access team domain (e.g., https://yourteam.cloudflareaccess.com)
-# - POLICY_AUD: Application Audience (AUD) tag from Cloudflare Access application
+# Secrets (set via: wrangler secret put SECRET_NAME)
+# ACCOUNT_ID - Your Cloudflare account ID
+# API_KEY - Your Cloudflare API token
+# TEAM_DOMAIN - Your Cloudflare Access team domain (e.g., https://myteam.cloudflareaccess.com)
+# POLICY_AUD - Your Cloudflare Access policy AUD tag
 
-# Set secrets with:
-# npx wrangler secret put ACCOUNT_ID
-# npx wrangler secret put API_KEY
-# npx wrangler secret put TEAM_DOMAIN
-# npx wrangler secret put POLICY_AUD
-
+# Example KV namespace bindings (add as needed)
+# [[kv_namespaces]]
+# binding = "KV_your_namespace_id"
+# id = "your_namespace_id"

@@ -4,7 +4,7 @@
 name = "kv-manager-dev"
 main = "worker/index.ts"
 compatibility_date = "2025-01-01"
-node_compat = true
+compatibility_flags = ["nodejs_compat"]
 
 # No build step for development (frontend runs separately via Vite)
 # Frontend: npm run dev (runs on localhost:5173)
@@ -12,7 +12,7 @@ node_compat = true
 
 # Local D1 database for development
 [[d1_databases]]
-binding = "METADATA_DB"
+binding = "METADATA"
 database_name = "kv-manager-metadata-dev"
 database_id = "local-dev-database"
 
@@ -41,4 +41,3 @@ ENVIRONMENT = "development"
 # - Mock data is returned when no real Cloudflare credentials are provided
 # - No secrets required for local development
 # - CORS is configured to allow http://localhost:5173
-
