@@ -137,7 +137,9 @@ export function KeyEditorDialog({
 
       await api.putKey(namespaceId, keyName, value, options)
       
-      onSaved()
+      // Notify parent to refresh (await if it returns a promise)
+      await Promise.resolve(onSaved())
+      
       onOpenChange(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save key')
@@ -155,9 +157,13 @@ export function KeyEditorDialog({
       setRestoring(true)
       setError('')
       await api.restoreBackup(namespaceId, keyName)
+      
+      // Reload the key data in the dialog
       await loadKeyData()
       setHasBackup(false)
-      onSaved()
+      
+      // Notify parent to refresh the list (await if it returns a promise)
+      await Promise.resolve(onSaved())
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to restore backup')
     } finally {

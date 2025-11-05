@@ -534,6 +534,8 @@ export default function App() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
+                    id="key-prefix-filter"
+                    name="prefix"
                     placeholder="Filter by prefix..."
                     value={keyPrefix}
                     onChange={(e) => setKeyPrefix(e.target.value)}
@@ -865,12 +867,12 @@ export default function App() {
           }}
           namespaceId={currentView.namespaceId}
           keyName={selectedKeyForEdit}
-          onSaved={() => {
+          onSaved={async () => {
             // Reload keys from the beginning
             setKeysCursor(undefined)
             setKeysListComplete(true)
             // Call loadKeys without cursor to get fresh data
-            loadKeys(currentView.namespaceId, false, undefined)
+            await loadKeys(currentView.namespaceId, false, undefined)
           }}
         />
       )}
