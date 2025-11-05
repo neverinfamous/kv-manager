@@ -225,7 +225,7 @@ export async function handleNamespaceRoutes(
   } catch (error) {
     console.error('[Namespaces] Error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal Server Error', message: error instanceof Error ? error.message : String(error) }),
+      JSON.stringify({ error: 'Internal Server Error' }),
       {
         status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }

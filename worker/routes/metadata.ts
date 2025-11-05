@@ -216,7 +216,7 @@ export async function handleMetadataRoutes(
   } catch (error) {
     console.error('[Metadata] Error:', error);
     return new Response(
-      JSON.stringify({ error: 'Internal Server Error', message: error instanceof Error ? error.message : String(error) }),
+      JSON.stringify({ error: 'Internal Server Error' }),
       {
         status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }

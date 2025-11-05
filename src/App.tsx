@@ -1219,7 +1219,10 @@ export default function App() {
                 </SelectTrigger>
                 <SelectContent>
                   {namespaces
-                    .filter(ns => currentView.type === 'namespace' && ns.id !== currentView.namespaceId)
+                    .filter(ns => {
+                      if (currentView.type !== 'namespace') return false;
+                      return ns.id !== currentView.namespaceId;
+                    })
                     .map(ns => (
                       <SelectItem key={ns.id} value={ns.id}>
                         {ns.title}
