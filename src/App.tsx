@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { api, type KVNamespace, type KVKey } from './services/api'
 import { auth } from './services/auth'
 import { useTheme } from './hooks/useTheme'
-import { Database, Plus, Moon, Sun, Monitor, Loader2, Trash2, Key, Search } from 'lucide-react'
+import { Database, Plus, Moon, Sun, Monitor, Loader2, Trash2, Key, Search, History, Download, Upload, Copy, Clock, Tag } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -23,11 +23,16 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { KeyEditorDialog } from './components/KeyEditorDialog'
+import { SearchKeys } from './components/SearchKeys'
+import { AuditLog } from './components/AuditLog'
 
 type View = 
   | { type: 'list' }
   | { type: 'namespace'; namespaceId: string; namespaceTitle: string }
+  | { type: 'search' }
+  | { type: 'audit'; namespaceId?: string }
 
 export default function App() {
   const [namespaces, setNamespaces] = useState<KVNamespace[]>([])
@@ -67,6 +72,25 @@ export default function App() {
   
   // Edit key state
   const [selectedKeyForEdit, setSelectedKeyForEdit] = useState<string | null>(null)
+
+  // Import/Export state
+  const [showImportDialog, setShowImportDialog] = useState(false)
+  const [showExportDialog, setShowExportDialog] = useState(false)
+  const [importNamespaceId, setImportNamespaceId] = useState('')
+  const [exportNamespaceId, setExportNamespaceId] = useState('')
+  const [exportFormat, setExportFormat] = useState<'json' | 'ndjson'>('json')
+  const [importData, setImportData] = useState('')
+  const [importing, setImporting] = useState(false)
+  const [exporting, setExporting] = useState(false)
+
+  // Bulk operations state (copy, TTL, tags)
+  const [showBulkCopyDialog, setShowBulkCopyDialog] = useState(false)
+  const [showBulkTTLDialog, setShowBulkTTLDialog] = useState(false)
+  const [showBulkTagDialog, setShowBulkTagDialog] = useState(false)
+  const [bulkTargetNamespace, setBulkTargetNamespace] = useState('')
+  const [bulkTTL, setBulkTTL] = useState('')
+  const [bulkTags, setBulkTags] = useState('')
+  const [bulkOperating, setBulkOperating] = useState(false)
 
   // Load namespaces on mount
   useEffect(() => {
@@ -314,34 +338,184 @@ export default function App() {
     }
   }, [currentView, keyPrefix, loadKeys])
 
+  // Import/Export handlers
+  const handleExport = async () => {
+    try {
+      setExporting(true)
+      setError('')
+      const blob = await api.exportNamespace(exportNamespaceId, exportFormat)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${exportNamespaceId}-export.${exportFormat === 'ndjson' ? 'ndjson' : 'json'}`
+      a.click()
+      URL.revokeObjectURL(url)
+      setShowExportDialog(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to export namespace')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handleImport = async () => {
+    if (!importData.trim()) return
+
+    try {
+      setImporting(true)
+      setError('')
+      const result = await api.importKeys(importNamespaceId, importData)
+      setShowImportDialog(false)
+      setImportData('')
+      alert(`Import completed: ${result.processed_keys}/${result.total_keys} keys imported (${result.error_count} errors)`)
+      
+      // Refresh keys if currently viewing this namespace
+      if (currentView.type === 'namespace' && currentView.namespaceId === importNamespaceId) {
+        setKeysCursor(undefined)
+        setKeysListComplete(true)
+        await loadKeys(importNamespaceId, false, undefined)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import keys')
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  // Bulk operations handlers
+  const handleBulkCopy = async () => {
+    if (!bulkTargetNamespace || selectedKeys.length === 0 || currentView.type !== 'namespace') return
+
+    try {
+      setBulkOperating(true)
+      setError('')
+      const result = await api.bulkCopyKeys(currentView.namespaceId, selectedKeys, bulkTargetNamespace)
+      setShowBulkCopyDialog(false)
+      setBulkTargetNamespace('')
+      setSelectedKeys([])
+      alert(`Bulk copy completed: ${result.processed_keys}/${result.total_keys} keys copied (${result.error_count} errors)`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to copy keys')
+    } finally {
+      setBulkOperating(false)
+    }
+  }
+
+  const handleBulkTTL = async () => {
+    if (!bulkTTL || selectedKeys.length === 0 || currentView.type !== 'namespace') return
+
+    const ttl = parseInt(bulkTTL)
+    if (isNaN(ttl) || ttl <= 0) {
+      setError('TTL must be a positive number')
+      return
+    }
+
+    try {
+      setBulkOperating(true)
+      setError('')
+      const result = await api.bulkUpdateTTL(currentView.namespaceId, selectedKeys, ttl)
+      setShowBulkTTLDialog(false)
+      setBulkTTL('')
+      setSelectedKeys([])
+      alert(`Bulk TTL update completed: ${result.processed_keys}/${result.total_keys} keys updated (${result.error_count} errors)`)
+      
+      // Refresh keys
+      setKeysCursor(undefined)
+      setKeysListComplete(true)
+      await loadKeys(currentView.namespaceId, false, undefined)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update TTL')
+    } finally {
+      setBulkOperating(false)
+    }
+  }
+
+  const handleBulkTag = async () => {
+    if (!bulkTags.trim() || selectedKeys.length === 0 || currentView.type !== 'namespace') return
+
+    try {
+      setBulkOperating(true)
+      setError('')
+      const tags = bulkTags.split(',').map(t => t.trim()).filter(Boolean)
+      await api.bulkTagKeys(currentView.namespaceId, selectedKeys, tags)
+      setShowBulkTagDialog(false)
+      setBulkTags('')
+      setSelectedKeys([])
+      alert(`Tags applied to ${selectedKeys.length} keys`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to apply tags')
+    } finally {
+      setBulkOperating(false)
+    }
+  }
+
+  const openExportDialog = (namespaceId: string) => {
+    setExportNamespaceId(namespaceId)
+    setShowExportDialog(true)
+  }
+
+  const openImportDialog = (namespaceId: string) => {
+    setImportNamespaceId(namespaceId)
+    setShowImportDialog(true)
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div 
-            className="flex items-center gap-3 cursor-pointer"
-            onClick={() => setCurrentView({ type: 'list' })}
-          >
-            <Database className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold">KV Manager</h1>
-              <p className="text-sm text-muted-foreground">Manage your Cloudflare Workers KV</p>
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <div 
+              className="flex items-center gap-3 cursor-pointer"
+              onClick={() => setCurrentView({ type: 'list' })}
+            >
+              <Database className="h-8 w-8 text-primary" />
+              <div>
+                <h1 className="text-2xl font-bold">KV Manager</h1>
+                <p className="text-sm text-muted-foreground">Manage your Cloudflare Workers KV</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={cycleTheme}
+                title={`Theme: ${theme}`}
+              >
+                {getThemeIcon()}
+              </Button>
+              <Button variant="outline" onClick={() => auth.logout()}>
+                Logout
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={cycleTheme}
-              title={`Theme: ${theme}`}
-            >
-              {getThemeIcon()}
-            </Button>
-            <Button variant="outline" onClick={() => auth.logout()}>
-              Logout
-            </Button>
-          </div>
+
+          {/* Navigation Tabs */}
+          {currentView.type !== 'namespace' && (
+            <div className="flex gap-2">
+              <Button
+                variant={currentView.type === 'list' ? 'default' : 'ghost'}
+                onClick={() => setCurrentView({ type: 'list' })}
+              >
+                <Database className="h-4 w-4 mr-2" />
+                Namespaces
+              </Button>
+              <Button
+                variant={currentView.type === 'search' ? 'default' : 'ghost'}
+                onClick={() => setCurrentView({ type: 'search' })}
+              >
+                <Search className="h-4 w-4 mr-2" />
+                Search
+              </Button>
+              <Button
+                variant={currentView.type === 'audit' ? 'default' : 'ghost'}
+                onClick={() => setCurrentView({ type: 'audit' })}
+              >
+                <History className="h-4 w-4 mr-2" />
+                Audit Log
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -466,11 +640,11 @@ export default function App() {
                             </div>
                           )}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="space-y-2">
                           <Button 
                             variant="outline" 
                             size="sm" 
-                            className="flex-1"
+                            className="w-full"
                             onClick={() => setCurrentView({ 
                               type: 'namespace', 
                               namespaceId: ns.id,
@@ -480,20 +654,44 @@ export default function App() {
                             <Database className="h-3.5 w-3.5 mr-1.5" />
                             Browse Keys
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => openRenameDialog(ns.id, ns.title)}
-                          >
-                            Rename
-                          </Button>
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => handleDeleteNamespace(ns.id)}
-                          >
-                            Delete
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => openExportDialog(ns.id)}
+                            >
+                              <Download className="h-3.5 w-3.5 mr-1" />
+                              Export
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => openImportDialog(ns.id)}
+                            >
+                              <Upload className="h-3.5 w-3.5 mr-1" />
+                              Import
+                            </Button>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => openRenameDialog(ns.id, ns.title)}
+                            >
+                              Rename
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => handleDeleteNamespace(ns.id)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -547,34 +745,62 @@ export default function App() {
 
             {/* Bulk Actions Bar */}
             {selectedKeys.length > 0 && (
-              <div className="bg-primary/10 border border-primary rounded-lg p-4 mb-6 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    checked={selectedKeys.length === keys.length}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setSelectedKeys(keys.map(k => k.name))
-                      } else {
-                        setSelectedKeys([])
-                      }
-                    }}
-                  />
-                  <span className="font-medium">
-                    {selectedKeys.length} key{selectedKeys.length !== 1 ? 's' : ''} selected
-                  </span>
+              <div className="bg-primary/10 border border-primary rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={selectedKeys.length === keys.length}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedKeys(keys.map(k => k.name))
+                        } else {
+                          setSelectedKeys([])
+                        }
+                      }}
+                    />
+                    <span className="font-medium">
+                      {selectedKeys.length} key{selectedKeys.length !== 1 ? 's' : ''} selected
+                    </span>
+                  </div>
                 </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleBulkDeleteKeys(currentView.namespaceId)}
-                  disabled={deleting}
-                >
-                  {deleting ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deleting...</>
-                  ) : (
-                    <><Trash2 className="h-4 w-4 mr-2" /> Delete Selected</>
-                  )}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowBulkCopyDialog(true)}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy to Namespace
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowBulkTTLDialog(true)}
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+                    Update TTL
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowBulkTagDialog(true)}
+                  >
+                    <Tag className="h-4 w-4 mr-2" />
+                    Apply Tags
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleBulkDeleteKeys(currentView.namespaceId)}
+                    disabled={deleting}
+                  >
+                    {deleting ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deleting...</>
+                    ) : (
+                      <><Trash2 className="h-4 w-4 mr-2" /> Delete Selected</>
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
 
@@ -698,6 +924,33 @@ export default function App() {
               </>
             )}
           </div>
+        )}
+
+        {/* Search View */}
+        {currentView.type === 'search' && (
+          <SearchKeys
+            namespaces={namespaces}
+            onNavigateToKey={(namespaceId, keyName) => {
+              const ns = namespaces.find(n => n.id === namespaceId)
+              if (ns) {
+                setCurrentView({
+                  type: 'namespace',
+                  namespaceId: ns.id,
+                  namespaceTitle: ns.title
+                })
+                // After view changes, the key will be loaded; we can optionally open the editor
+                setTimeout(() => setSelectedKeyForEdit(keyName), 100)
+              }
+            }}
+          />
+        )}
+
+        {/* Audit Log View */}
+        {currentView.type === 'audit' && (
+          <AuditLog
+            namespaces={namespaces}
+            selectedNamespaceId={currentView.namespaceId}
+          />
         )}
       </main>
 
@@ -876,6 +1129,188 @@ export default function App() {
           }}
         />
       )}
+
+      {/* Export Dialog */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export Namespace</DialogTitle>
+            <DialogDescription>
+              Export all keys from this namespace to a file.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Export Format</Label>
+              <Select value={exportFormat} onValueChange={(v) => setExportFormat(v as 'json' | 'ndjson')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="json">JSON (Array format)</SelectItem>
+                  <SelectItem value="ndjson">NDJSON (Line-delimited)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowExportDialog(false)} disabled={exporting}>
+              Cancel
+            </Button>
+            <Button onClick={handleExport} disabled={exporting}>
+              {exporting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Export
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Import Keys</DialogTitle>
+            <DialogDescription>
+              Import keys from JSON or NDJSON data. Existing keys will be overwritten.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="import-data">Import Data</Label>
+              <Textarea
+                id="import-data"
+                placeholder='[{"name": "key1", "value": "value1"}] or line-delimited JSON'
+                value={importData}
+                onChange={(e) => setImportData(e.target.value)}
+                className="font-mono min-h-[300px]"
+              />
+              <p className="text-sm text-muted-foreground">
+                Paste JSON array or NDJSON (one JSON object per line)
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowImportDialog(false)} disabled={importing}>
+              Cancel
+            </Button>
+            <Button onClick={handleImport} disabled={importing || !importData.trim()}>
+              {importing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Import
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Copy Dialog */}
+      <Dialog open={showBulkCopyDialog} onOpenChange={setShowBulkCopyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Copy Keys to Namespace</DialogTitle>
+            <DialogDescription>
+              Copy {selectedKeys.length} selected key{selectedKeys.length !== 1 ? 's' : ''} to another namespace.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Target Namespace</Label>
+              <Select value={bulkTargetNamespace} onValueChange={setBulkTargetNamespace}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select target namespace" />
+                </SelectTrigger>
+                <SelectContent>
+                  {namespaces
+                    .filter(ns => currentView.type === 'namespace' && ns.id !== currentView.namespaceId)
+                    .map(ns => (
+                      <SelectItem key={ns.id} value={ns.id}>
+                        {ns.title}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkCopyDialog(false)} disabled={bulkOperating}>
+              Cancel
+            </Button>
+            <Button onClick={handleBulkCopy} disabled={bulkOperating || !bulkTargetNamespace}>
+              {bulkOperating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Copy Keys
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk TTL Dialog */}
+      <Dialog open={showBulkTTLDialog} onOpenChange={setShowBulkTTLDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update TTL</DialogTitle>
+            <DialogDescription>
+              Set expiration time for {selectedKeys.length} selected key{selectedKeys.length !== 1 ? 's' : ''}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="bulk-ttl">TTL (seconds)</Label>
+              <Input
+                id="bulk-ttl"
+                type="number"
+                placeholder="e.g., 3600 for 1 hour"
+                value={bulkTTL}
+                onChange={(e) => setBulkTTL(e.target.value)}
+              />
+              <p className="text-sm text-muted-foreground">
+                Keys will expire after this many seconds
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkTTLDialog(false)} disabled={bulkOperating}>
+              Cancel
+            </Button>
+            <Button onClick={handleBulkTTL} disabled={bulkOperating || !bulkTTL}>
+              {bulkOperating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Update TTL
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Tag Dialog */}
+      <Dialog open={showBulkTagDialog} onOpenChange={setShowBulkTagDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Apply Tags</DialogTitle>
+            <DialogDescription>
+              Add tags to {selectedKeys.length} selected key{selectedKeys.length !== 1 ? 's' : ''}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="bulk-tags">Tags (comma-separated)</Label>
+              <Input
+                id="bulk-tags"
+                placeholder="e.g., production, important, config"
+                value={bulkTags}
+                onChange={(e) => setBulkTags(e.target.value)}
+              />
+              <p className="text-sm text-muted-foreground">
+                Tags will be stored in D1 for enhanced search
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowBulkTagDialog(false)} disabled={bulkOperating}>
+              Cancel
+            </Button>
+            <Button onClick={handleBulkTag} disabled={bulkOperating || !bulkTags.trim()}>
+              {bulkOperating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Apply Tags
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

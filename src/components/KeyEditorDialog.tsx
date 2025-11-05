@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { MetadataEditor } from './MetadataEditor'
 
 interface KeyEditorDialogProps {
   open: boolean
@@ -203,7 +204,7 @@ export function KeyEditorDialog({
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'value' | 'metadata' | 'backup')} className="flex-1 flex flex-col">
               <TabsList>
                 <TabsTrigger value="value">Value</TabsTrigger>
-                <TabsTrigger value="metadata">Metadata</TabsTrigger>
+                <TabsTrigger value="metadata">Metadata & Tags</TabsTrigger>
                 <TabsTrigger value="backup">Backup</TabsTrigger>
               </TabsList>
 
@@ -237,35 +238,51 @@ export function KeyEditorDialog({
                 />
               </TabsContent>
 
-              <TabsContent value="metadata" className="flex-1 flex flex-col gap-4">
-                <div className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="edit-ttl">TTL (seconds)</Label>
-                    <Input
-                      id="edit-ttl"
-                      type="number"
-                      placeholder="Leave empty for no expiration"
-                      value={ttl}
-                      onChange={(e) => setTTL(e.target.value)}
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Set time-to-live in seconds. Key will expire after this duration.
-                    </p>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="edit-metadata">Custom Metadata (JSON)</Label>
-                    <Textarea
-                      id="edit-metadata"
-                      placeholder='{"key": "value"}'
-                      value={metadata}
-                      onChange={(e) => setMetadata(e.target.value)}
-                      className="font-mono min-h-[200px]"
-                      rows={8}
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Optional JSON metadata to store with this key.
-                    </p>
-                  </div>
+              <TabsContent value="metadata" className="flex-1 flex flex-col gap-4 overflow-y-auto">
+                {/* TTL Section */}
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-ttl">TTL (seconds)</Label>
+                  <Input
+                    id="edit-ttl"
+                    type="number"
+                    placeholder="Leave empty for no expiration"
+                    value={ttl}
+                    onChange={(e) => setTTL(e.target.value)}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Set time-to-live in seconds. Key will expire after this duration.
+                  </p>
+                </div>
+
+                {/* KV Native Metadata */}
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-metadata">KV Native Metadata (JSON)</Label>
+                  <Textarea
+                    id="edit-metadata"
+                    placeholder='{"key": "value"}'
+                    value={metadata}
+                    onChange={(e) => setMetadata(e.target.value)}
+                    className="font-mono min-h-[100px]"
+                    rows={4}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Optional JSON metadata stored natively in KV (limited to 1024 bytes).
+                  </p>
+                </div>
+
+                {/* D1-backed Tags and Metadata */}
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold mb-2">D1-Backed Tags & Metadata</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Tags and custom metadata stored in D1 for enhanced search and organization.
+                  </p>
+                  <MetadataEditor
+                    namespaceId={namespaceId}
+                    keyName={keyName}
+                    onSave={() => {
+                      // Metadata saved successfully
+                    }}
+                  />
                 </div>
               </TabsContent>
 

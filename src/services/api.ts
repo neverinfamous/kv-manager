@@ -344,6 +344,186 @@ class APIService {
     
     await this.handleResponse(response);
   }
+
+  /**
+   * Bulk copy keys to another namespace
+   */
+  async bulkCopyKeys(
+    namespaceId: string, 
+    keys: string[], 
+    targetNamespaceId: string
+  ): Promise<{ job_id: string; status: string; total_keys: number; processed_keys: number; error_count: number }> {
+    const response = await fetch(
+      `${WORKER_API}/api/keys/${namespaceId}/bulk-copy`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ keys, target_namespace_id: targetNamespaceId })
+      }
+    )
+    
+    await this.handleResponse(response);
+    
+    const data = await response.json()
+    return data.result
+  }
+
+  /**
+   * Bulk update TTL for keys
+   */
+  async bulkUpdateTTL(
+    namespaceId: string, 
+    keys: string[], 
+    expirationTtl: number
+  ): Promise<{ job_id: string; status: string; total_keys: number; processed_keys: number; error_count: number }> {
+    const response = await fetch(
+      `${WORKER_API}/api/keys/${namespaceId}/bulk-ttl`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ keys, expiration_ttl: expirationTtl })
+      }
+    )
+    
+    await this.handleResponse(response);
+    
+    const data = await response.json()
+    return data.result
+  }
+
+  /**
+   * Bulk tag keys
+   */
+  async bulkTagKeys(
+    namespaceId: string,
+    keys: string[],
+    tags: string[],
+    operation: 'add' | 'remove' | 'replace' = 'replace'
+  ): Promise<{ processed_keys: number }> {
+    const response = await fetch(
+      `${WORKER_API}/api/metadata/${namespaceId}/bulk-tag`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ keys, tags, operation })
+      }
+    )
+    
+    await this.handleResponse(response);
+    
+    const data = await response.json()
+    return data.result
+  }
+
+  /**
+   * Export namespace
+   */
+  async exportNamespace(namespaceId: string, format: 'json' | 'ndjson' = 'json'): Promise<Blob> {
+    const response = await fetch(
+      `${WORKER_API}/api/export/${namespaceId}?format=${format}`,
+      { credentials: 'include' }
+    )
+    
+    await this.handleResponse(response);
+    
+    return await response.blob()
+  }
+
+  /**
+   * Import keys to namespace
+   */
+  async importKeys(
+    namespaceId: string,
+    data: string,
+    collision: 'skip' | 'overwrite' | 'fail' = 'overwrite'
+  ): Promise<{ job_id: string; status: string; total_keys: number; processed_keys: number; error_count: number }> {
+    const response = await fetch(
+      `${WORKER_API}/api/import/${namespaceId}?collision=${collision}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain'
+        },
+        credentials: 'include',
+        body: data
+      }
+    )
+    
+    await this.handleResponse(response);
+    
+    const data_result = await response.json()
+    return data_result.result
+  }
+
+  /**
+   * Get job status
+   */
+  async getJobStatus(jobId: string): Promise<Record<string, unknown>> {
+    const response = await fetch(
+      `${WORKER_API}/api/jobs/${jobId}`,
+      { credentials: 'include' }
+    )
+    
+    await this.handleResponse(response);
+    
+    const data = await response.json()
+    return data.result
+  }
+
+  /**
+   * Get audit log for namespace
+   */
+  async getAuditLog(
+    namespaceId: string,
+    options?: { limit?: number; offset?: number; operation?: string }
+  ): Promise<Array<Record<string, unknown>>> {
+    const params = new URLSearchParams()
+    if (options?.limit) params.set('limit', options.limit.toString())
+    if (options?.offset) params.set('offset', options.offset.toString())
+    if (options?.operation) params.set('operation', options.operation)
+
+    const response = await fetch(
+      `${WORKER_API}/api/audit/${namespaceId}?${params.toString()}`,
+      { credentials: 'include' }
+    )
+    
+    await this.handleResponse(response);
+    
+    const data = await response.json()
+    return data.result
+  }
+
+  /**
+   * Get audit log for user
+   */
+  async getUserAuditLog(
+    userEmail: string,
+    options?: { limit?: number; offset?: number; operation?: string }
+  ): Promise<Array<Record<string, unknown>>> {
+    const params = new URLSearchParams()
+    if (options?.limit) params.set('limit', options.limit.toString())
+    if (options?.offset) params.set('offset', options.offset.toString())
+    if (options?.operation) params.set('operation', options.operation)
+
+    const response = await fetch(
+      `${WORKER_API}/api/audit/user/${encodeURIComponent(userEmail)}?${params.toString()}`,
+      { credentials: 'include' }
+    )
+    
+    await this.handleResponse(response);
+    
+    const data = await response.json()
+    return data.result
+  }
 }
 
 export const api = new APIService()
