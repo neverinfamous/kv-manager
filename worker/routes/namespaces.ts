@@ -69,6 +69,9 @@ export async function handleNamespaceRoutes(
         });
       }
 
+      console.log('[Namespaces] Creating namespace:', body.title);
+      console.log('[Namespaces] Account ID:', env.ACCOUNT_ID);
+      
       const cfRequest = createCfApiRequest(
         `/accounts/${env.ACCOUNT_ID}/storage/kv/namespaces`,
         env,
@@ -79,6 +82,14 @@ export async function handleNamespaceRoutes(
       );
 
       const cfResponse = await fetch(cfRequest);
+      console.log('[Namespaces] Cloudflare API response status:', cfResponse.status);
+      
+      if (!cfResponse.ok) {
+        const errorText = await cfResponse.text();
+        console.error('[Namespaces] Cloudflare API error:', errorText);
+        throw new Error(`Cloudflare API error: ${cfResponse.status} - ${errorText}`);
+      }
+      
       const data = await cfResponse.json() as { result: KVNamespaceInfo };
 
       // Log audit entry

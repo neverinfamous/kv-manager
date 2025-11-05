@@ -24,7 +24,8 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
 
   // If not an API request, serve static assets
   if (!url.pathname.startsWith('/api/')) {
-    return env.ASSETS.fetch(request);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return env.ASSETS.fetch(request as any) as any;
   }
 
   // Authentication
