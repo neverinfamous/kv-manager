@@ -70,6 +70,33 @@ A modern, full-featured web application for managing Cloudflare Workers KV names
 - **Backend**: Cloudflare Workers + KV + D1 (metadata) + Durable Objects (orchestration)
 - **Auth**: Cloudflare Access (Zero Trust)
 
+## Docker Deployment
+
+**🐳 Quick Start with Docker**
+
+```bash
+# Pull and run the latest image
+docker pull writenotenow/kv-manager:latest
+
+docker run -d \
+  -p 8787:8787 \
+  -e ACCOUNT_ID=your_cloudflare_account_id \
+  -e API_KEY=your_cloudflare_api_token \
+  -e TEAM_DOMAIN=https://yourteam.cloudflareaccess.com \
+  -e POLICY_AUD=your_cloudflare_access_aud_tag \
+  --name kv-manager \
+  writenotenow/kv-manager:latest
+```
+
+Access at `http://localhost:8787`
+
+**📖 Full Docker Documentation:** See [DOCKER_README.md](./DOCKER_README.md) for complete deployment guides including:
+- Docker Compose configurations
+- Kubernetes deployments
+- Reverse proxy examples (Nginx, Traefik, Caddy)
+- Security best practices
+- Troubleshooting guide
+
 ## Local Development
 
 ### Prerequisites
