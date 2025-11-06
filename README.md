@@ -6,6 +6,8 @@ A modern, full-featured web application for managing Cloudflare Workers KV names
 
 **🎯 [Try the Live Demo](https://kv.adamic.tech/)** - See KV Manager in action
 
+**📰 [Read the v1.0.0 Release Article](https://adamic.tech/articles/2025-11-05-kv-manager-v1-0-0)** - Learn more about features, architecture, and deployment
+
 ## Features
 
 ### Namespace Management

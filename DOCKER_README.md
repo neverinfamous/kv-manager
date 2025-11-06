@@ -14,6 +14,8 @@ A fully containerized version of the KV Manager for Cloudflare. This Docker imag
 
 **🎯 [Try the Live Demo](https://kv.adamic.tech/)** - See KV Manager in action
 
+**📰 [Read the v1.0.0 Release Article](https://adamic.tech/articles/2025-11-05-kv-manager-v1-0-0)** - Learn more about features, architecture, and deployment
+
 **🚀 Docker Deployment:** Run the development server in a containerized environment for testing and local development.
 
 ---
