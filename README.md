@@ -76,10 +76,15 @@ A modern, full-featured web application for managing Cloudflare Workers KV names
 
 **🐳 Quick Start with Docker**
 
-```bash
-# Pull and run the latest image
-docker pull writenotenow/kv-manager:latest
+Pull the latest image:
 
+```bash
+docker pull writenotenow/kv-manager:latest
+```
+
+Run the container:
+
+```bash
 docker run -d \
   -p 8787:8787 \
   -e ACCOUNT_ID=your_cloudflare_account_id \
@@ -126,12 +131,14 @@ npx wrangler d1 execute kv-manager-metadata-dev --local --file=worker/schema.sql
 
 4. **Start the development servers**:
 
-Terminal 1 (Frontend):
+In Terminal 1, start the frontend:
+
 ```bash
 npm run dev
 ```
 
-Terminal 2 (Worker):
+In Terminal 2, start the worker:
+
 ```bash
 npx wrangler dev --config wrangler.dev.toml --local
 ```
@@ -163,10 +170,12 @@ cp wrangler.toml.example wrangler.toml
 ```
 
 2. **Create D1 database**:
+
 ```bash
 wrangler d1 create kv-manager-metadata
-# Copy the database_id to wrangler.toml
 ```
+
+Copy the `database_id` from the output to your `wrangler.toml` file.
 
 3. **Initialize D1 schema**:
 ```bash
@@ -174,16 +183,42 @@ wrangler d1 execute kv-manager-metadata --remote --file=worker/schema.sql
 ```
 
 4. **Set secrets**:
+
+Set your Cloudflare Account ID:
+
 ```bash
 wrangler secret put ACCOUNT_ID
+```
+
+Set your API Key:
+
+```bash
 wrangler secret put API_KEY
+```
+
+Set your Team Domain:
+
+```bash
 wrangler secret put TEAM_DOMAIN
+```
+
+Set your Policy AUD tag:
+
+```bash
 wrangler secret put POLICY_AUD
 ```
 
 5. **Build and deploy**:
+
+Build the application:
+
 ```bash
 npm run build
+```
+
+Deploy to Cloudflare:
+
+```bash
 wrangler deploy
 ```
 
@@ -333,9 +368,24 @@ Theme preference is stored in localStorage and persists across sessions.
 ## Troubleshooting
 
 ### Worker not starting
-- Ensure `wrangler` is installed: `npm install -g wrangler`
-- Check Node.js version (18+ required)
-- Try clearing Wrangler cache: `rm -rf ~/.wrangler`
+
+Ensure `wrangler` is installed:
+
+```bash
+npm install -g wrangler
+```
+
+Check Node.js version (18+ required):
+
+```bash
+node --version
+```
+
+Try clearing Wrangler cache:
+
+```bash
+rm -rf ~/.wrangler
+```
 
 ### Frontend not connecting to worker
 - Verify `VITE_WORKER_API` in `.env` points to `http://localhost:8787`
@@ -343,9 +393,20 @@ Theme preference is stored in localStorage and persists across sessions.
 - Ensure both dev servers are running
 
 ### D1 database errors
-- Reinitialize schema: `npx wrangler d1 execute kv-manager-metadata-dev --local --file=worker/schema.sql`
-- Check D1 binding in `wrangler.dev.toml`
-- Verify database exists: `npx wrangler d1 list`
+
+Reinitialize the schema:
+
+```bash
+npx wrangler d1 execute kv-manager-metadata-dev --local --file=worker/schema.sql
+```
+
+Check D1 binding in `wrangler.dev.toml`
+
+Verify database exists:
+
+```bash
+npx wrangler d1 list
+```
 
 ### Mock data not appearing
 - Mock data is only returned when `ACCOUNT_ID` and `API_KEY` are not set

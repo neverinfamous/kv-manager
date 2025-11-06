@@ -22,11 +22,15 @@ A fully containerized version of the KV Manager for Cloudflare. This Docker imag
 
 ### Pull and Run
 
-```bash
-# Pull the latest image
-docker pull writenotenow/kv-manager:latest
+Pull the latest image:
 
-# Run with environment variables
+```bash
+docker pull writenotenow/kv-manager:latest
+```
+
+Run with environment variables:
+
+```bash
 docker run -d \
   -p 8787:8787 \
   -e ACCOUNT_ID=your_cloudflare_account_id \
@@ -141,19 +145,28 @@ This Docker image packages the complete KV Manager with:
 
 The KV Manager requires a metadata database to store tags, custom metadata, and audit logs.
 
-**Create the metadata database:**
+Login to Wrangler:
+
 ```bash
 npx wrangler login
+```
+
+Create the metadata database:
+
+```bash
 npx wrangler d1 create kv-manager-metadata
 ```
 
-**Initialize the schema:**
+Clone the repository to get schema.sql:
+
 ```bash
-# Clone the repository to get schema.sql
 git clone https://github.com/neverinfamous/kv-manager.git
 cd kv-manager
+```
 
-# Run the schema initialization
+Initialize the schema:
+
+```bash
 npx wrangler d1 execute kv-manager-metadata --remote --file=worker/schema.sql
 ```
 
@@ -442,14 +455,27 @@ Use this endpoint for:
 
 ### 1. Use Docker Secrets (Docker Swarm)
 
-```bash
-# Create secrets
-echo "your_account_id" | docker secret create kv_account_id -
-echo "your_api_token" | docker secret create kv_api_key -
-echo "https://yourteam.cloudflareaccess.com" | docker secret create kv_team_domain -
-echo "your_aud_tag" | docker secret create kv_policy_aud -
+Create the secrets:
 
-# Deploy with secrets
+```bash
+echo "your_account_id" | docker secret create kv_account_id -
+```
+
+```bash
+echo "your_api_token" | docker secret create kv_api_key -
+```
+
+```bash
+echo "https://yourteam.cloudflareaccess.com" | docker secret create kv_team_domain -
+```
+
+```bash
+echo "your_aud_tag" | docker secret create kv_policy_aud -
+```
+
+Deploy with secrets:
+
+```bash
 docker service create \
   --name kv-manager \
   --publish 8787:8787 \
@@ -462,8 +488,9 @@ docker service create \
 
 ### 2. Use Kubernetes Secrets
 
+Create the secret:
+
 ```bash
-# Create secret
 kubectl create secret generic kv-manager-secrets \
   --from-literal=account-id='your_account_id' \
   --from-literal=api-key='your_api_token' \
@@ -473,8 +500,9 @@ kubectl create secret generic kv-manager-secrets \
 
 ### 3. Restrict Network Access
 
+Docker Compose with network isolation:
+
 ```yaml
-# Docker Compose with network isolation
 version: '3.8'
 
 services:
@@ -524,7 +552,8 @@ docker run -d \
 
 ### Container Won't Start
 
-**Check logs:**
+Check the logs:
+
 ```bash
 docker logs kv-manager
 ```
@@ -535,14 +564,22 @@ docker logs kv-manager
 - Port already in use
 
 **Solution:**
+
+Verify environment variables:
+
 ```bash
-# Verify environment variables
 docker inspect kv-manager | grep -A 10 Env
+```
 
-# Check if port is available
+Check if port is available:
+
+```bash
 netstat -tuln | grep 8787
+```
 
-# Restart with correct variables
+Restart with correct variables:
+
+```bash
 docker rm -f kv-manager
 docker run -d [correct options] writenotenow/kv-manager:latest
 ```
@@ -560,7 +597,8 @@ docker run -d [correct options] writenotenow/kv-manager:latest
 3. Ensure your user is allowed in Access policies
 4. Check if API token has **KV Edit** and **D1 Edit** permissions
 
-**Logs to check:**
+Check authentication logs:
+
 ```bash
 docker logs kv-manager | grep -i "auth\|jwt\|access"
 ```
@@ -578,7 +616,8 @@ docker logs kv-manager | grep -i "auth\|jwt\|access"
 3. Check Cloudflare API status
 4. Verify KV namespaces exist in your account
 
-**Test API token:**
+Test the API token:
+
 ```bash
 curl -X GET "https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage/kv/namespaces" \
   -H "Authorization: Bearer ${API_KEY}" \
@@ -587,12 +626,14 @@ curl -X GET "https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/storage
 
 ### High Memory Usage
 
-**Check container stats:**
+Check container stats:
+
 ```bash
 docker stats kv-manager
 ```
 
-**Set memory limits:**
+Set memory limits:
+
 ```bash
 docker run -d \
   --memory="512m" \
@@ -604,26 +645,42 @@ docker run -d \
 ### Networking Issues
 
 **Cannot access from host:**
+
+Check if container is running:
+
 ```bash
-# Check if container is running
 docker ps | grep kv-manager
+```
 
-# Check port mapping
+Check port mapping:
+
+```bash
 docker port kv-manager
+```
 
-# Test connectivity
+Test connectivity:
+
+```bash
 curl http://localhost:8787/health
 ```
 
 **Cannot access from other containers:**
+
+Ensure containers are on the same network:
+
 ```bash
-# Ensure containers are on the same network
 docker network inspect bridge
+```
 
-# Create custom network
+Create custom network:
+
+```bash
 docker network create kv-network
+```
 
-# Run with custom network
+Run with custom network:
+
+```bash
 docker run --network kv-network [other options] writenotenow/kv-manager:latest
 ```
 
@@ -633,21 +690,28 @@ docker run --network kv-network [other options] writenotenow/kv-manager:latest
 
 ### Docker Logs
 
-**View logs:**
+Follow logs in real-time:
+
 ```bash
-# Follow logs in real-time
 docker logs -f kv-manager
+```
 
-# View last 100 lines
+View last 100 lines:
+
+```bash
 docker logs --tail 100 kv-manager
+```
 
-# View logs since 1 hour ago
+View logs since 1 hour ago:
+
+```bash
 docker logs --since 1h kv-manager
 ```
 
 ### Log Aggregation
 
-**Using Docker logging driver:**
+Using Docker logging driver:
+
 ```yaml
 version: '3.8'
 
@@ -661,7 +725,8 @@ services:
         max-file: "3"
 ```
 
-**Forward to syslog:**
+Forward to syslog:
+
 ```yaml
 version: '3.8'
 
@@ -677,13 +742,15 @@ services:
 
 ### Container Stats
 
-Monitor container resource usage:
+View real-time stats:
 
 ```bash
-# View real-time stats
 docker stats kv-manager
+```
 
-# View stats for all containers
+View stats for all containers:
+
+```bash
 docker stats
 ```
 
@@ -693,36 +760,49 @@ docker stats
 
 ### Updating to Latest Version
 
-```bash
-# Pull latest image
-docker pull writenotenow/kv-manager:latest
+Pull latest image:
 
-# Stop and remove old container
+```bash
+docker pull writenotenow/kv-manager:latest
+```
+
+Stop and remove old container:
+
+```bash
 docker stop kv-manager
 docker rm kv-manager
+```
 
-# Start new container with same configuration
+Start new container with same configuration:
+
+```bash
 docker run -d [same options as before] writenotenow/kv-manager:latest
 ```
 
 ### Using Docker Compose
 
-```bash
-# Pull latest images
-docker-compose pull
+Pull latest images:
 
-# Restart services
+```bash
+docker-compose pull
+```
+
+Restart services:
+
+```bash
 docker-compose up -d
 ```
 
 ### Version Pinning (Recommended for Production)
+
+Pin to a specific version:
 
 ```yaml
 version: '3.8'
 
 services:
   kv-manager:
-    image: writenotenow/kv-manager:1.0.0  # Pin to specific version
+    image: writenotenow/kv-manager:1.0.0
     # ... rest of configuration
 ```
 
@@ -758,11 +838,15 @@ cd kv-manager
 
 ### Build the Image
 
-```bash
-# Build for your platform
-docker build -t kv-manager:local .
+Build for your platform:
 
-# Build for multiple platforms
+```bash
+docker build -t kv-manager:local .
+```
+
+Build for multiple platforms:
+
+```bash
 docker buildx build --platform linux/amd64,linux/arm64 -t kv-manager:local .
 ```
 
