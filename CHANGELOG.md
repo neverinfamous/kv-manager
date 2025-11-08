@@ -64,10 +64,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added conditional guard in `BulkProgressDialog` to only invoke hook when dialog is open and has valid parameters
   - Prevents infinite reconnection loops and API request floods
 - **SECURITY**: Log injection vulnerability in WebSocket message handling
-  - Added `sanitizeForLog()` function to remove newlines and control characters from logged data
+  - Modified logging to only output safe, non-user-controlled fields (status, percentage, processed count, total count)
+  - Removed logging of potentially malicious user-controlled strings like key names, error messages, and close reasons
   - Prevents malicious log forging via WebSocket messages
-  - Limits log entry length to prevent log flooding
-  - Sanitizes WebSocket event data, progress data, and error messages before logging
+  - Uses defensive logging approach: only log known-safe data types (numbers, enums)
 - React hooks immutability issues in `useBulkJobProgress` hook
 - Circular dependency in WebSocket connection callback
 - TypeScript type compatibility issues between DOM and Cloudflare Workers WebSocket types

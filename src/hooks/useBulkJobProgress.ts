@@ -20,23 +20,6 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 const POLLING_INTERVAL = 2000; // 2 seconds
 
 /**
- * Sanitize data for logging to prevent log injection attacks
- * Removes newlines and limits length to prevent log forging
- */
-function sanitizeForLog(data: unknown): string {
-  try {
-    const str = typeof data === 'string' ? data : JSON.stringify(data);
-    // Remove newlines, carriage returns, and other control characters
-    // eslint-disable-next-line no-control-regex
-    const sanitized = str.replace(/[\n\r\t\x00-\x1F\x7F]/g, ' ');
-    // Limit length to prevent log flooding
-    return sanitized.length > 500 ? sanitized.substring(0, 500) + '...[truncated]' : sanitized;
-  } catch {
-    return '[Unable to sanitize data]';
-  }
-}
-
-/**
  * Custom hook for tracking bulk job progress via WebSocket with polling fallback
  */
 export function useBulkJobProgress({
@@ -179,8 +162,13 @@ export function useBulkJobProgress({
 
         try {
           const data = JSON.parse(event.data) as JobProgress;
-          // Sanitize data before logging to prevent log injection
-          console.log('[useBulkJobProgress] Received progress:', sanitizeForLog(data));
+          // Log only safe, non-user-controlled metadata to prevent log injection
+          console.log('[useBulkJobProgress] Received progress update:', {
+            status: data.status,
+            percentage: data.progress?.percentage,
+            processed: data.progress?.processed,
+            total: data.progress?.total
+          });
 
           setProgress(data);
 
@@ -203,15 +191,16 @@ export function useBulkJobProgress({
         }
       };
 
-      ws.onerror = (event) => {
-        console.error('[useBulkJobProgress] WebSocket error:', sanitizeForLog(event.type));
+      ws.onerror = () => {
+        console.error('[useBulkJobProgress] WebSocket error occurred');
         setIsConnected(false);
       };
 
       ws.onclose = (event) => {
         if (!isMountedRef.current) return;
 
-        console.log('[useBulkJobProgress] WebSocket closed:', event.code, sanitizeForLog(event.reason));
+        // Only log the numeric close code, not the reason (which could contain user data)
+        console.log('[useBulkJobProgress] WebSocket closed with code:', event.code);
         setIsConnected(false);
         wsRef.current = null;
 
