@@ -457,33 +457,24 @@ I preserved your formatting and tone while placing each improvement in its prope
 ## Next Steps:
 
 ### Immediate Priorities:
-
 1. ✅ ~~Add WebSocket support for real-time progress~~ — **Completed!**
 2. ✅ ~~Implement Durable Objects for large operations~~ — **Completed!**
 3. **Add Audit Event Logging (foundation for job history & replay)** — log all job lifecycle events (`started`, `progress`, `completed`, `error`, `cancelled`) to a new `audit_log_events` D1 table.
-4. **Implement Event Replay API** — create `GET /api/jobs/:jobId/events` to return stored audit events for progress history and UI replay.
-5. **Add Operation Cancellation Support** — extend the WebSocket channel to handle `{ type: "cancel" }` messages, update job status, and log the cancellation event.
+4. **Add Operation Cancellation Support** — extend the WebSocket channel to handle `{ type: "cancel" }` messages, update job status, and log the cancellation event.
+5. **Implement Event Replay API** — create `GET /api/jobs/:jobId/events` to return stored audit events for progress history and UI replay.
 6. Add advanced search filters
 
 ### Future Enhancements:
-
-1. R2 backup integration
-2. Scheduled jobs (cron triggers)
-3. Full version history
-4. Key expiration alerts
-5. Namespace templates
-6. Batch operations to R2
-7. Real-time notifications for completed operations
-8. **Progress history and job logs** — powered by the new audit event system
+1. **Progress history and job logs** — powered by the new audit event system
+2. R2 backup integration
+3. Batch operations to R2
+4. Scheduled jobs (cron triggers)
+5. Full version history
+6. Real-time notifications for completed operations
+7. Key expiration alerts
+8. Namespace templates
 
 ---
-
-This version cleanly shows the progression:
-
-* **WebSocket + Durable Objects** → completed core infrastructure
-* **Audit event system + replay + cancel** → next logical technical layer
-* **Search, analytics, history, notifications** → user-facing enhancements built on that foundation.
-
 
 ## License
 

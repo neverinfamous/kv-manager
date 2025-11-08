@@ -63,7 +63,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added parameter validation in `useBulkJobProgress` hook to prevent connection attempts with empty jobId or wsUrl
   - Added conditional guard in `BulkProgressDialog` to only invoke hook when dialog is open and has valid parameters
   - Prevents infinite reconnection loops and API request floods
-  - See `HOTFIX-websocket-connection-loop.md` for detailed analysis
+- **SECURITY**: Log injection vulnerability in WebSocket message handling
+  - Added `sanitizeForLog()` function to remove newlines and control characters from logged data
+  - Prevents malicious log forging via WebSocket messages
+  - Limits log entry length to prevent log flooding
+  - Sanitizes WebSocket event data, progress data, and error messages before logging
 - React hooks immutability issues in `useBulkJobProgress` hook
 - Circular dependency in WebSocket connection callback
 - TypeScript type compatibility issues between DOM and Cloudflare Workers WebSocket types
