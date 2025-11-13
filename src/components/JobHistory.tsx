@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -43,10 +43,7 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
     return () => clearTimeout(timer);
   }, [jobIdInput]);
 
-  // Serialize dateRange for stable dependency checking
-  const dateRangeKey = `${dateRange.from?.toISOString() || ''}_${dateRange.to?.toISOString() || ''}`;
-
-  const loadJobs = useCallback(async (reset = false) => {
+  const loadJobs = async (reset = false) => {
     try {
       setLoading(true);
       setError('');
@@ -141,11 +138,12 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, operationFilter, namespaceFilter, datePreset, dateRange.from, dateRange.to, jobIdSearch, minErrors, sortBy, sortOrder, offset, jobs, limit]);
+  };
 
   useEffect(() => {
     loadJobs(true);
-  }, [statusFilter, operationFilter, namespaceFilter, datePreset, dateRangeKey, jobIdSearch, minErrors, sortBy, sortOrder, loadJobs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, operationFilter, namespaceFilter, datePreset, dateRange.from, dateRange.to, jobIdSearch, minErrors, sortBy, sortOrder]);
 
   const handleLoadMore = () => {
     loadJobs(false);
