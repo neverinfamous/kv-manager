@@ -33,11 +33,12 @@ A modern, full-featured web application for managing Cloudflare Workers KV names
 - Separate from KV's native metadata system
 
 ### Search & Discovery
-- Cross-namespace search by key name
+- Cross-namespace search by key name (partial matches)
 - Filter by specific namespaces
 - Filter by tags (multiple tag support)
 - Real-time search with debouncing
 - Quick navigation to search results
+- **Note**: Search queries D1 metadata (key names, tags, custom metadata) - not KV values
 
 ### Bulk Operations
 - **Bulk Delete**: Remove multiple keys at once
@@ -288,8 +289,9 @@ wrangler deploy
 - `POST /api/metadata/:namespaceId/bulk-tag` - Apply tags to multiple keys (add/remove/replace)
 
 ### Search
-- `GET /api/search` - Search keys across namespaces
-  - Query params: `query` (key name pattern), `namespace_id`, `tags` (comma-separated)
+- `GET /api/search` - Search keys across namespaces by key name, tags, or custom metadata
+  - Query params: `query` (key name pattern), `namespaceId` (namespace filter), `tags` (comma-separated)
+  - **Note**: Only searches keys with metadata in D1; does not search KV values
 
 ### Backup & Restore
 - `POST /api/backup/:namespaceId/:keyName/undo` - Restore key to previous version
@@ -327,6 +329,12 @@ wrangler deploy
   - Query params: `limit`, `offset`, `operation`
 - `GET /api/audit/user/:userEmail` - Get audit log for a specific user
   - Query params: `limit`, `offset`, `operation`
+
+### Admin Utilities
+- `POST /api/admin/sync-keys/:namespaceId` - Sync all keys in a namespace to search index
+  - Creates metadata entries for keys that don't have them
+  - Useful for indexing keys created outside the UI (via API, CLI, etc.)
+  - Returns: Total keys found and number successfully synced
 
 ## Database Schema
 
@@ -421,6 +429,12 @@ Theme preference is stored in localStorage and persists across sessions.
 4. Filter by tags (comma-separated, optional)
 5. Click any result to navigate to that key
 
+**Important Notes**:
+- **Key Name Search**: Searches the key NAME (not namespace names or values). Example: searching "meta" finds keys like "meta:test", "metadata:config", etc.
+- **Tag Search**: You can search by tags alone (leave key name empty) or combine with key name search
+- **Automatic Indexing**: All keys created or updated through the UI are automatically indexed for search
+- **External Keys**: Keys created outside the UI (via API, CLI, etc.) won't appear in search until they're viewed/edited in the UI or have metadata added
+
 ### Job History
 1. Click **Job History** in the navigation bar
 2. View all your bulk operations (import, export, bulk delete, etc.)
@@ -449,6 +463,17 @@ Theme preference is stored in localStorage and persists across sessions.
 3. Filter by operation type (create, update, delete, etc.)
 4. Use pagination to browse historical entries
 5. Export logs to CSV for external analysis
+
+### Syncing Existing Keys for Search
+If you have keys created outside the UI (via API, CLI, etc.) that don't appear in search:
+
+1. Use the sync endpoint to index them:
+   ```bash
+   curl -X POST https://your-domain.com/api/admin/sync-keys/{namespaceId}
+   ```
+2. All keys in the namespace will be indexed for search
+3. Keys with existing metadata won't be affected
+4. Future keys created through the UI are automatically indexed
 
 ## Troubleshooting
 

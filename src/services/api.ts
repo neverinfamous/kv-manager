@@ -674,6 +674,24 @@ class APIService {
     const data = await response.json()
     return data.result
   }
+
+  /**
+   * Sync all keys in a namespace to search index
+   */
+  async syncNamespaceKeys(namespaceId: string): Promise<{ message: string; total_keys: number; synced: number }> {
+    const response = await fetch(
+      `${WORKER_API}/api/admin/sync-keys/${namespaceId}`,
+      {
+        method: 'POST',
+        credentials: 'include'
+      }
+    )
+    
+    await this.handleResponse(response);
+    
+    const data = await response.json()
+    return data.result
+  }
 }
 
 export const api = new APIService()

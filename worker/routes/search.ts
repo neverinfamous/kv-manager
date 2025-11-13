@@ -17,9 +17,10 @@ export async function handleSearchRoutes(
       const query = url.searchParams.get('query') || '';
       const namespaceId = url.searchParams.get('namespaceId');
       const tagsParam = url.searchParams.get('tags');
-      const tags = tagsParam ? tagsParam.split(',') : [];
+      const tags = tagsParam ? tagsParam.split(',').map(t => t.trim()).filter(Boolean) : [];
 
       console.log('[Search] Searching with query:', query, 'namespace:', namespaceId, 'tags:', tags);
+      console.log('[Search] URL search params:', Object.fromEntries(url.searchParams.entries()));
 
       if (isLocalDev || !db) {
         // Return mock search results
@@ -56,27 +57,33 @@ export async function handleSearchRoutes(
         });
       }
 
-      // Build SQL query
-      let sql = 'SELECT namespace_id, key_name, tags, custom_metadata FROM key_metadata WHERE 1=1';
+      // Build SQL query - allow searching by query OR tags OR both
+      let sql = 'SELECT namespace_id, key_name, tags, custom_metadata FROM key_metadata';
       const bindings: (string | null)[] = [];
+      const conditions: string[] = [];
 
       // Add query filter (key name pattern)
       if (query) {
-        sql += ' AND key_name LIKE ?';
+        conditions.push('key_name LIKE ?');
         bindings.push(`%${query}%`);
       }
 
       // Add namespace filter
       if (namespaceId) {
-        sql += ' AND namespace_id = ?';
+        conditions.push('namespace_id = ?');
         bindings.push(namespaceId);
       }
 
       // Add tags filter (check if any tag matches)
       if (tags.length > 0) {
         const tagConditions = tags.map(() => 'tags LIKE ?').join(' OR ');
-        sql += ` AND (${tagConditions})`;
+        conditions.push(`(${tagConditions})`);
         tags.forEach(tag => bindings.push(`%"${tag}"%`));
+      }
+
+      // Only add WHERE clause if there are conditions
+      if (conditions.length > 0) {
+        sql += ' WHERE ' + conditions.join(' AND ');
       }
 
       sql += ' ORDER BY updated_at DESC LIMIT 100';
@@ -87,6 +94,8 @@ export async function handleSearchRoutes(
       const stmt = db.prepare(sql);
       const results = await stmt.bind(...bindings).all();
 
+      console.log('[Search] D1 returned', results.results?.length || 0, 'results');
+
       // Parse JSON fields
       const parsedResults = (results.results || []).map((row: Record<string, unknown>) => ({
         namespace_id: row.namespace_id,
@@ -94,6 +103,8 @@ export async function handleSearchRoutes(
         tags: row.tags ? JSON.parse(row.tags as string) : [],
         custom_metadata: row.custom_metadata ? JSON.parse(row.custom_metadata as string) : {}
       }));
+      
+      console.log('[Search] Parsed results:', parsedResults.length, 'keys found');
 
       const response: APIResponse = {
         success: true,

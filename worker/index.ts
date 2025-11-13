@@ -9,6 +9,7 @@ import { handleSearchRoutes } from './routes/search';
 import { handleBackupRoutes } from './routes/backup';
 import { handleImportExportRoutes } from './routes/import-export';
 import { handleAuditRoutes } from './routes/audit';
+import { handleAdminRoutes } from './routes/admin';
 
 /**
  * Main request handler
@@ -116,6 +117,10 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
 
   if (url.pathname.startsWith('/api/audit')) {
     return await handleAuditRoutes(request, env, url, corsHeaders, isLocalDev, userEmail);
+  }
+
+  if (url.pathname.startsWith('/api/admin')) {
+    return await handleAdminRoutes(request, env, url, corsHeaders, isLocalDev, userEmail);
   }
 
   // 404 for unknown API routes

@@ -71,13 +71,21 @@ export function SearchKeys({ namespaces, onNavigateToKey }: SearchKeysProps) {
     <div className="space-y-4">
       <div className="bg-card rounded-lg border p-6">
         <h2 className="text-2xl font-bold mb-4">Search Keys</h2>
+        
+        {/* Info Banner */}
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <p className="text-sm text-blue-900 dark:text-blue-100">
+            <strong>How Search Works:</strong> Search finds keys by their <strong>name</strong> or <strong>tags</strong> (not by namespace name or KV values). 
+            All keys created or updated through this UI are automatically searchable. You can search by key name, tags, or both.
+          </p>
+        </div>
 
         {/* Search Form */}
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Query Input */}
             <div className="space-y-2">
-              <Label htmlFor="search-query">Search Query</Label>
+              <Label htmlFor="search-query">Key Name</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -85,10 +93,13 @@ export function SearchKeys({ namespaces, onNavigateToKey }: SearchKeysProps) {
                   name="search-query"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search key names..."
+                  placeholder="e.g., user:123, config:api..."
                   className="pl-9"
                 />
               </div>
+              <p className="text-xs text-muted-foreground">
+                Search for keys by name (partial matches). Leave empty to search by tags only.
+              </p>
             </div>
 
             {/* Namespace Filter */}
@@ -118,8 +129,11 @@ export function SearchKeys({ namespaces, onNavigateToKey }: SearchKeysProps) {
               name="tag-filter"
               value={tagFilter}
               onChange={(e) => setTagFilter(e.target.value)}
-              placeholder="e.g., production, config"
+              placeholder="e.g., production, config, dev"
             />
+            <p className="text-xs text-muted-foreground">
+              Filter by tags. You can search by tags alone or combine with key name search.
+            </p>
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { api, type KVNamespace, type KVKey, type JobProgress } from './services/api'
 import { auth } from './services/auth'
 import { useTheme } from './hooks/useTheme'
-import { Database, Plus, Moon, Sun, Monitor, Loader2, Trash2, Key, Search, History, Download, Upload, Copy, Clock, Tag } from 'lucide-react'
+import { Database, Plus, Moon, Sun, Monitor, Loader2, Trash2, Key, Search, History, Download, Upload, Copy, Clock, Tag, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -146,6 +146,18 @@ export default function App() {
       await loadNamespaces()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete namespace')
+    }
+  }
+
+  const handleSyncNamespace = async (namespaceId: string, namespaceTitle: string) => {
+    try {
+      setError('')
+      const result = await api.syncNamespaceKeys(namespaceId)
+      alert(`✓ Synced ${namespaceTitle}\n\n${result.message}\nTotal keys: ${result.total_keys}\nSynced: ${result.synced}`)
+      await loadNamespaces()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to sync namespace')
+      alert(`✗ Failed to sync ${namespaceTitle}\n\n${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   }
 
@@ -727,6 +739,18 @@ export default function App() {
                             >
                               <Upload className="h-3.5 w-3.5 mr-1" />
                               Import
+                            </Button>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="flex-1"
+                              onClick={() => handleSyncNamespace(ns.id, ns.title)}
+                              title="Sync all keys to search index"
+                            >
+                              <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                              Sync Search
                             </Button>
                           </div>
                           <div className="flex gap-2">

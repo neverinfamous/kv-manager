@@ -246,6 +246,26 @@ export async function handleKeyRoutes(
         throw new Error(`Cloudflare API error: ${cfResponse.status} - ${errorText}`);
       }
 
+      // Ensure metadata entry exists in D1 for search functionality
+      // This creates an empty entry if one doesn't exist, making the key searchable
+      if (db) {
+        try {
+          await db
+            .prepare(`
+              INSERT INTO key_metadata (namespace_id, key_name, tags, custom_metadata, created_at, updated_at)
+              VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
+              ON CONFLICT(namespace_id, key_name)
+              DO UPDATE SET updated_at = datetime('now')
+            `)
+            .bind(namespaceId, keyName, '[]', '{}')
+            .run();
+          console.log('[Keys] Ensured metadata entry exists for key:', keyName);
+        } catch (err) {
+          console.error('[Keys] Failed to create/update metadata entry:', err);
+          // Don't fail the whole operation if metadata creation fails
+        }
+      }
+
       // Log audit entry
       const operation = body.create_backup ? 'update' : 'create';
       await auditLog(db, {
