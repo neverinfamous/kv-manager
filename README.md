@@ -314,7 +314,6 @@ wrangler deploy
   - Returns: Job list with metadata, progress, and timestamps
 - `GET /api/jobs/:jobId/events` - Get lifecycle event history for a job
   - Returns: Chronological list of events (started, progress_25, progress_50, progress_75, completed/failed/cancelled)
-  - User authorization: Only job owner can view events
   - Use case: Job history UI, debugging, event replay
 
 ### Audit Logs

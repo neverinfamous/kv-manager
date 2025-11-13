@@ -468,42 +468,37 @@ export async function handleImportExportRoutes(
         });
       }
 
-      // First, get the job to check ownership
-      const job = await db.prepare(
-        'SELECT user_email FROM bulk_jobs WHERE job_id = ?'
-      ).bind(jobId).first();
+      try {
+        // Fetch all events for this job
+        console.log('[Jobs] Fetching events for job:', jobId);
+        const events = await db.prepare(
+          'SELECT * FROM job_audit_events WHERE job_id = ? ORDER BY timestamp ASC'
+        ).bind(jobId).all<{ id: number; job_id: string; event_type: string; user_email: string; timestamp: string; details: string | null }>();
 
-      if (!job) {
-        return new Response(JSON.stringify({ error: 'Job not found' }), {
-          status: 404,
+        console.log('[Jobs] Found', events.results?.length || 0, 'events');
+
+        const response: APIResponse = {
+          success: true,
+          result: {
+            job_id: jobId,
+            events: events.results || []
+          }
+        };
+
+        return new Response(JSON.stringify(response), {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        });
+      } catch (dbError) {
+        console.error('[Jobs] Database error while fetching job events:', dbError);
+        const errorMessage = dbError instanceof Error ? dbError.message : 'Database query failed';
+        return new Response(JSON.stringify({ 
+          error: 'Database error',
+          message: errorMessage
+        }), {
+          status: 500,
           headers: { 'Content-Type': 'application/json', ...corsHeaders }
         });
       }
-
-      // Verify user owns this job
-      if (job.user_email !== userEmail) {
-        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-          status: 403,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        });
-      }
-
-      // Fetch all events for this job
-      const events = await db.prepare(
-        'SELECT * FROM job_audit_events WHERE job_id = ? ORDER BY timestamp ASC'
-      ).bind(jobId).all();
-
-      const response: APIResponse = {
-        success: true,
-        result: {
-          job_id: jobId,
-          events: events.results || []
-        }
-      };
-
-      return new Response(JSON.stringify(response), {
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      });
     }
 
     // 404 for unknown routes
@@ -513,8 +508,15 @@ export async function handleImportExportRoutes(
     });
   } catch (error) {
     console.error('[ImportExport] Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    console.error('[ImportExport] Error stack:', errorStack);
     return new Response(
-      JSON.stringify({ error: 'Internal Server Error' }),
+      JSON.stringify({ 
+        error: 'Internal Server Error',
+        message: isLocalDev ? errorMessage : undefined,
+        stack: isLocalDev ? errorStack : undefined
+      }),
       {
         status: 500,
         headers: { 'Content-Type': 'application/json', ...corsHeaders }
