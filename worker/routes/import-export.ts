@@ -414,10 +414,17 @@ export async function handleImportExportRoutes(
         });
       }
 
-    const response: APIResponse = {
-      success: true,
-        result: job
-    };
+      // For completed export jobs, add download URL
+      const jobWithDownload: Record<string, unknown> = { ...job as Record<string, unknown> };
+      if (job.operation_type === 'export' && job.status === 'completed') {
+        jobWithDownload.download_url = `/api/jobs/${jobId}/download`;
+        jobWithDownload.format = jobId.startsWith('export-') ? 'json' : 'json'; // Default format
+      }
+
+      const response: APIResponse = {
+        success: true,
+        result: jobWithDownload
+      };
 
     return new Response(JSON.stringify(response), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders }

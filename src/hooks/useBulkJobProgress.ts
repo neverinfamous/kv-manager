@@ -16,9 +16,9 @@ interface UseBulkJobProgressReturn {
   cancelJob: () => void;
 }
 
-const RECONNECT_DELAYS = [1000, 2000, 4000, 8000, 16000]; // Exponential backoff
-const MAX_RECONNECT_ATTEMPTS = 5;
-const POLLING_INTERVAL = 2000; // 2 seconds
+const RECONNECT_DELAYS = [500, 1000, 2000]; // Faster backoff for quick jobs
+const MAX_RECONNECT_ATTEMPTS = 3; // Fail faster and switch to polling
+const POLLING_INTERVAL = 1000; // Poll every second for faster feedback
 
 /**
  * Custom hook for tracking bulk job progress via WebSocket with polling fallback
@@ -41,6 +41,7 @@ export function useBulkJobProgress({
   const hasCompletedRef = useRef(false);
   const connectRef = useRef<(() => void) | null>(null);
   const hasCancelledRef = useRef(false);
+  const isConnectingRef = useRef(false); // Prevent multiple simultaneous connections
 
   // Polling fallback
   const startPolling = useCallback(() => {
@@ -74,6 +75,13 @@ export function useBulkJobProgress({
             currentKey: jobStatus.current_key as string | undefined,
             percentage: (jobStatus.percentage as number) || 0,
           },
+          // Include download URL for completed export jobs
+          result: jobStatus.download_url ? {
+            downloadUrl: jobStatus.download_url as string,
+            format: jobStatus.format as string || 'json',
+            processed: (jobStatus.processed_keys as number) || 0,
+            errors: (jobStatus.error_count as number) || 0,
+          } : undefined,
         };
 
         setProgress(progressUpdate);
@@ -155,7 +163,8 @@ export function useBulkJobProgress({
 
   // Connect to WebSocket
   const connect = useCallback(() => {
-    if (wsRef.current || hasCompletedRef.current) {
+    // Prevent multiple simultaneous connection attempts
+    if (wsRef.current || hasCompletedRef.current || isConnectingRef.current) {
       return;
     }
 
@@ -164,6 +173,9 @@ export function useBulkJobProgress({
       console.log('[useBulkJobProgress] Skipping connection - missing wsUrl or jobId');
       return;
     }
+
+    // Mark as connecting
+    isConnectingRef.current = true;
 
     // Determine WebSocket URL
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -180,6 +192,7 @@ export function useBulkJobProgress({
         if (!isMountedRef.current) return;
         
         console.log('[useBulkJobProgress] WebSocket connected');
+        isConnectingRef.current = false; // Connection established
         setIsConnected(true);
         setError(null);
         reconnectAttemptsRef.current = 0;
@@ -224,6 +237,7 @@ export function useBulkJobProgress({
 
       ws.onerror = () => {
         console.error('[useBulkJobProgress] WebSocket error occurred');
+        isConnectingRef.current = false; // Connection failed
         setIsConnected(false);
       };
 
@@ -232,6 +246,7 @@ export function useBulkJobProgress({
 
         // Only log the numeric close code, not the reason (which could contain user data)
         console.log('[useBulkJobProgress] WebSocket closed with code:', event.code);
+        isConnectingRef.current = false; // Connection closed
         setIsConnected(false);
         wsRef.current = null;
 
@@ -273,6 +288,7 @@ export function useBulkJobProgress({
       });
     } catch (err) {
       console.error('[useBulkJobProgress] Failed to create WebSocket:', err);
+      isConnectingRef.current = false; // Connection attempt failed
       setError('Failed to establish WebSocket connection');
       startPolling(); // Fall back to polling immediately
     }

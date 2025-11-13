@@ -1373,6 +1373,7 @@ export default function App() {
 
       {/* Progress Dialog for Bulk Operations */}
       <BulkProgressDialog
+        key={progressJobId} // Force remount when job changes to prevent hook conflicts
         open={showProgressDialog}
         jobId={progressJobId}
         wsUrl={progressWsUrl}

@@ -214,6 +214,7 @@ export class ImportExportDO {
     jobId: string, 
     updates: {
       status?: string;
+      total_keys?: number;
       processed_keys?: number;
       error_count?: number;
       current_key?: string;
@@ -233,6 +234,10 @@ export class ImportExportDO {
         if (updates.status === 'completed' || updates.status === 'failed' || updates.status === 'cancelled') {
           setClauses.push('completed_at = CURRENT_TIMESTAMP');
         }
+      }
+      if (updates.total_keys !== undefined) {
+        setClauses.push('total_keys = ?');
+        values.push(updates.total_keys);
       }
       if (updates.processed_keys !== undefined) {
         setClauses.push('processed_keys = ?');
@@ -593,8 +598,14 @@ export class ImportExportDO {
 
       console.log('[ImportExportDO] Found', allKeys.length, 'keys to export');
 
-      // Update total count
-      await this.updateJobInDB(jobId, { processed_keys: 0, error_count: 0, percentage: 10 });
+      // Update total count and status to running
+      await this.updateJobInDB(jobId, { 
+        status: 'running',
+        total_keys: allKeys.length,
+        processed_keys: 0, 
+        error_count: 0, 
+        percentage: 10 
+      });
       this.broadcastProgress({
         jobId,
         status: 'running',

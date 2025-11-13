@@ -410,10 +410,12 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
 
             {/* Job ID Search */}
             <div className="space-y-2">
-              <Label>Job ID</Label>
+              <Label htmlFor="job-id-search">Job ID</Label>
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
+                  id="job-id-search"
+                  name="job-id-search"
                   placeholder="Search by Job ID..."
                   value={jobIdInput}
                   onChange={(e) => setJobIdInput(e.target.value)}
@@ -424,8 +426,10 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
 
             {/* Min Errors Filter */}
             <div className="space-y-2">
-              <Label>Min Errors</Label>
+              <Label htmlFor="min-errors">Min Errors</Label>
               <Input
+                id="min-errors"
+                name="min-errors"
                 type="number"
                 min="0"
                 placeholder="Min errors..."
