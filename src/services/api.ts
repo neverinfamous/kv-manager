@@ -74,6 +74,52 @@ export interface BulkJobResponse {
   total_keys?: number
 }
 
+// Job Event types
+export interface JobEvent {
+  id: number
+  job_id: string
+  event_type: 'started' | 'progress_25' | 'progress_50' | 'progress_75' | 'completed' | 'failed' | 'cancelled'
+  user_email: string
+  timestamp: string
+  details: string | null
+}
+
+export interface JobEventDetails {
+  total?: number
+  processed?: number
+  errors?: number
+  percentage?: number
+  error_message?: string
+  [key: string]: unknown
+}
+
+export interface JobEventsResponse {
+  job_id: string
+  events: JobEvent[]
+}
+
+// Job List types
+export interface JobListItem {
+  job_id: string
+  namespace_id: string
+  operation_type: string
+  status: 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
+  total_keys: number | null
+  processed_keys: number | null
+  error_count: number | null
+  percentage: number
+  started_at: string
+  completed_at: string | null
+  user_email: string
+}
+
+export interface JobListResponse {
+  jobs: JobListItem[]
+  total: number
+  limit: number
+  offset: number
+}
+
 class APIService {
   /**
    * Get fetch options with credentials
@@ -572,6 +618,47 @@ class APIService {
     a.download = filename
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  /**
+   * Get job events (event timeline) for a specific job
+   */
+  async getJobEvents(jobId: string): Promise<JobEventsResponse> {
+    const response = await fetch(
+      `${WORKER_API}/api/jobs/${jobId}/events`,
+      { credentials: 'include' }
+    )
+    
+    await this.handleResponse(response);
+    
+    const data = await response.json()
+    return data.result
+  }
+
+  /**
+   * Get list of jobs with optional filters
+   */
+  async getJobList(options?: {
+    limit?: number
+    offset?: number
+    status?: string
+    operation_type?: string
+  }): Promise<JobListResponse> {
+    const params = new URLSearchParams()
+    if (options?.limit) params.set('limit', options.limit.toString())
+    if (options?.offset) params.set('offset', options.offset.toString())
+    if (options?.status) params.set('status', options.status)
+    if (options?.operation_type) params.set('operation_type', options.operation_type)
+
+    const response = await fetch(
+      `${WORKER_API}/api/jobs?${params.toString()}`,
+      { credentials: 'include' }
+    )
+    
+    await this.handleResponse(response);
+    
+    const data = await response.json()
+    return data.result
   }
 }
 

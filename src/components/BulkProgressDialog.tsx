@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useBulkJobProgress } from '../hooks/useBulkJobProgress';
 import type { JobProgress } from '../services/api';
-import { Loader2, CheckCircle2, XCircle, AlertCircle, Ban } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, AlertCircle, Ban, History } from 'lucide-react';
+import { JobHistoryDialog } from './JobHistoryDialog';
 
 interface BulkProgressDialogProps {
   open: boolean;
@@ -35,6 +36,7 @@ export function BulkProgressDialog({
   const [autoCloseTimer, setAutoCloseTimer] = useState<number | null>(null);
   const [canClose, setCanClose] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Only use the hook when dialog is open and we have valid params
   const shouldConnect = open && jobId && wsUrl;
@@ -288,6 +290,18 @@ export function BulkProgressDialog({
               )}
             </Button>
           )}
+
+          {/* View History button - shown when job is complete */}
+          {canClose && (progress?.status === 'completed' || progress?.status === 'failed' || progress?.status === 'cancelled') && (
+            <Button
+              onClick={() => setShowHistory(true)}
+              variant="outline"
+              className="mr-auto"
+            >
+              <History className="mr-2 h-4 w-4" />
+              View History
+            </Button>
+          )}
           
           <Button
             onClick={handleClose}
@@ -298,6 +312,13 @@ export function BulkProgressDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      {/* Job History Dialog */}
+      <JobHistoryDialog
+        open={showHistory}
+        jobId={jobId}
+        onClose={() => setShowHistory(false)}
+      />
     </Dialog>
   );
 }

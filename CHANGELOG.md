@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Job History UI**: Comprehensive user interface for viewing job event timelines and operation history
+  - New "Job History" navigation tab displaying all user's bulk operations
+  - Job list view with filtering by status (completed, failed, cancelled, running, queued) and operation type
+  - Pagination support with "Load More" functionality for large job histories
+  - Job cards showing operation type, namespace, status, timestamps, and progress summary
+  - Click any job card to view detailed event timeline in modal dialog
+  - Event timeline visualization with color-coded status indicators and milestone markers
+  - "View History" button in BulkProgressDialog appears after job completion
+  - Visual timeline showing: started → progress_25 → progress_50 → progress_75 → completed/failed/cancelled
+  - Detailed event metadata display including processed counts, error counts, and percentages
+  - Relative and absolute timestamp formatting (e.g., "2h ago" with hover for full date/time)
+  - User authorization: users can only view their own job history
+  - Empty state handling and error messaging
+  - Dual access: view history from both progress dialog and dedicated history page
+
+- **New API Endpoints for Job History**:
+  - `GET /api/jobs` - Retrieve paginated list of user's jobs with filtering support
+    - Query params: `limit`, `offset`, `status`, `operation_type`
+    - Returns job metadata, timestamps, progress stats, and status
+    - Ordered by `started_at DESC` (newest first)
+  - Enhanced `GET /api/jobs/:jobId/events` endpoint now integrated with UI components
+
 - **Operation Cancellation Support**: Users can now cancel in-progress bulk operations
   - Cancel button appears in progress dialog during `queued` or `running` operations
   - WebSocket-based cancellation via `{ type: "cancel", jobId }` message protocol
@@ -53,6 +75,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Schema already supports `cancelled` status in `bulk_jobs.status` and `job_audit_events.event_type`
 
 ### Changed
+- **Navigation Structure**:
+  - Added "Job History" as a primary navigation tab alongside Namespaces, Search, and Audit Log
+  - Reordered navigation to place Job History before Audit Log for better user flow
+  
 - **Bulk Operations Architecture**:
   - Refactored all bulk operations (delete, copy, TTL, tag) to be asynchronous
   - Operations now return immediately with `job_id`, `status`, and `ws_url` instead of waiting for completion
@@ -71,8 +97,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Auto-close progress dialog on successful completion after brief delay
   - Cancel button with loading state during cancellation
   - Visual distinction for cancelled operations (orange indicator, dedicated summary section)
+  - Post-completion "View History" button for immediate access to job event timeline
+  - Persistent job history accessible from dedicated navigation tab
 
 ### Technical Improvements
+- **New Frontend Components**:
+  - `JobHistory.tsx` - Full-page job list view with filtering and pagination
+  - `JobHistoryDialog.tsx` - Modal component for detailed event timeline visualization
+  - Enhanced `BulkProgressDialog.tsx` with "View History" button integration
+- **New API Methods**:
+  - `api.getJobList(options)` - Fetch paginated job list with filters (status, operation_type)
+  - `api.getJobEvents(jobId)` - Retrieve event timeline for specific job
+- **TypeScript Type Definitions**:
+  - `JobEvent` - Individual event structure with type-safe event_type enum
+  - `JobEventDetails` - Parsed JSON metadata for event details
+  - `JobEventsResponse` - API response structure for events endpoint
+  - `JobListItem` - Job metadata including progress and timestamps
+  - `JobListResponse` - Paginated job list response with total count
 - Implemented two Durable Object classes:
   - `BulkOperationDO` - Handles bulk delete, copy, TTL, and tag operations with milestone event logging and cancellation support
   - `ImportExportDO` - Handles import and export operations with file storage, milestone event logging, and cancellation support

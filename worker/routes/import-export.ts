@@ -177,6 +177,110 @@ export async function handleImportExportRoutes(
       });
     }
 
+    // GET /api/jobs - Get list of user's jobs
+    if (url.pathname === '/api/jobs' && request.method === 'GET') {
+      console.log('[Jobs] Getting job list for user:', userEmail);
+
+      const limit = parseInt(url.searchParams.get('limit') || '50');
+      const offset = parseInt(url.searchParams.get('offset') || '0');
+      const status = url.searchParams.get('status');
+      const operationType = url.searchParams.get('operation_type');
+
+      if (isLocalDev || !db) {
+        // Return mock jobs for local dev
+        const response: APIResponse = {
+          success: true,
+          result: {
+            jobs: [
+              {
+                job_id: 'export-123',
+                namespace_id: 'test-namespace',
+                operation_type: 'export',
+                status: 'completed',
+                total_keys: 1000,
+                processed_keys: 1000,
+                error_count: 0,
+                percentage: 100,
+                started_at: new Date(Date.now() - 3600000).toISOString(),
+                completed_at: new Date().toISOString(),
+                user_email: 'dev@localhost'
+              },
+              {
+                job_id: 'import-456',
+                namespace_id: 'test-namespace',
+                operation_type: 'import',
+                status: 'failed',
+                total_keys: 500,
+                processed_keys: 250,
+                error_count: 10,
+                percentage: 50,
+                started_at: new Date(Date.now() - 7200000).toISOString(),
+                completed_at: new Date(Date.now() - 7000000).toISOString(),
+                user_email: 'dev@localhost'
+              }
+            ],
+            total: 2,
+            limit,
+            offset
+          }
+        };
+
+        return new Response(JSON.stringify(response), {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        });
+      }
+
+      // Build query with filters
+      let query = 'SELECT * FROM bulk_jobs WHERE user_email = ?';
+      const bindings: (string | number)[] = [userEmail];
+
+      if (status) {
+        query += ' AND status = ?';
+        bindings.push(status);
+      }
+
+      if (operationType) {
+        query += ' AND operation_type = ?';
+        bindings.push(operationType);
+      }
+
+      query += ' ORDER BY started_at DESC LIMIT ? OFFSET ?';
+      bindings.push(limit, offset);
+
+      const jobs = await db.prepare(query).bind(...bindings).all();
+
+      // Get total count
+      let countQuery = 'SELECT COUNT(*) as total FROM bulk_jobs WHERE user_email = ?';
+      const countBindings: (string | number)[] = [userEmail];
+
+      if (status) {
+        countQuery += ' AND status = ?';
+        countBindings.push(status);
+      }
+
+      if (operationType) {
+        countQuery += ' AND operation_type = ?';
+        countBindings.push(operationType);
+      }
+
+      const countResult = await db.prepare(countQuery).bind(...countBindings).first();
+      const total = (countResult?.total as number) || 0;
+
+      const response: APIResponse = {
+        success: true,
+        result: {
+          jobs: jobs.results || [],
+          total,
+          limit,
+          offset
+        }
+      };
+
+      return new Response(JSON.stringify(response), {
+        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      });
+    }
+
     // GET /api/jobs/:jobId - Get job status
     const jobMatch = url.pathname.match(/^\/api\/jobs\/([^/]+)$/);
     if (jobMatch && request.method === 'GET') {

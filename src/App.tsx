@@ -28,12 +28,14 @@ import { KeyEditorDialog } from './components/KeyEditorDialog'
 import { SearchKeys } from './components/SearchKeys'
 import { AuditLog } from './components/AuditLog'
 import { BulkProgressDialog } from './components/BulkProgressDialog'
+import { JobHistory } from './components/JobHistory'
 
 type View = 
   | { type: 'list' }
   | { type: 'namespace'; namespaceId: string; namespaceTitle: string }
   | { type: 'search' }
   | { type: 'audit'; namespaceId?: string }
+  | { type: 'job-history' }
 
 export default function App() {
   const [namespaces, setNamespaces] = useState<KVNamespace[]>([])
@@ -554,6 +556,13 @@ export default function App() {
                 Search
               </Button>
               <Button
+                variant={currentView.type === 'job-history' ? 'default' : 'ghost'}
+                onClick={() => setCurrentView({ type: 'job-history' })}
+              >
+                <History className="h-4 w-4 mr-2" />
+                Job History
+              </Button>
+              <Button
                 variant={currentView.type === 'audit' ? 'default' : 'ghost'}
                 onClick={() => setCurrentView({ type: 'audit' })}
               >
@@ -985,6 +994,11 @@ export default function App() {
               }
             }}
           />
+        )}
+
+        {/* Job History View */}
+        {currentView.type === 'job-history' && (
+          <JobHistory namespaces={namespaces} />
         )}
 
         {/* Audit Log View */}

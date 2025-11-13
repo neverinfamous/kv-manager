@@ -1,6 +1,6 @@
 # Cloudflare KV Manager
 
-*Last Updated: November 12, 2025*
+*Last Updated: November 14, 2025*
 
 A modern, full-featured web application for managing Cloudflare Workers KV namespaces and keys, with enterprise-grade authentication via Cloudflare Access Zero Trust.
 
@@ -55,6 +55,17 @@ A modern, full-featured web application for managing Cloudflare Workers KV names
 - Progress tracking for large operations
 - Download exported data as files
 
+### Job History
+- **Job History UI** - View complete history of all bulk operations
+- Timeline visualization showing job lifecycle events
+- Filter jobs by status (completed, failed, cancelled, running, queued)
+- Filter by operation type (export, import, bulk delete, bulk copy, bulk TTL, bulk tag)
+- Job cards displaying operation details, namespace, timestamps, and progress
+- Click any job to view detailed event timeline with milestones
+- "View History" button in progress dialog for immediate access
+- Pagination support for large job histories
+- User-specific history (only see your own jobs)
+
 ### Audit Logging
 - Track all operations with user attribution
 - Filter by namespace or user
@@ -62,12 +73,12 @@ A modern, full-featured web application for managing Cloudflare Workers KV names
 - Pagination support
 - Export audit logs to CSV
 - Comprehensive operation tracking
-- **Job lifecycle event tracking** - Milestone events (started, 25%, 50%, 75%, completed/failed) for all bulk operations
+- **Job lifecycle event tracking** - Milestone events (started, 25%, 50%, 75%, completed/failed/cancelled) for all bulk operations
 - Event history API for job replay and debugging
 
 ### User Interface
 - **Dark/Light Theme**: System, light, and dark theme support
-- **Navigation**: Switch between Namespaces, Search, and Audit Log views
+- **Navigation**: Switch between Namespaces, Search, Job History, and Audit Log views
 - **Responsive Design**: Works on desktop and mobile
 - **Modern UI**: Built with shadcn/ui components and Tailwind CSS
 
@@ -288,17 +299,21 @@ wrangler deploy
 - `GET /api/jobs/:jobId/ws` - WebSocket endpoint for real-time progress updates
 - `GET /api/jobs/:jobId/download` - Download completed export file
 
+### Job History
+- `GET /api/jobs` - Get paginated list of user's jobs
+  - Query params: `limit`, `offset`, `status`, `operation_type`
+  - Returns: Job list with metadata, progress, and timestamps
+  - Ordered by `started_at DESC` (newest first)
+- `GET /api/jobs/:jobId/events` - Get lifecycle event history for a job
+  - Returns: Chronological list of events (started, progress_25, progress_50, progress_75, completed/failed/cancelled)
+  - User authorization: Only job owner can view events
+  - Use case: Job history UI, debugging, event replay
+
 ### Audit Logs
 - `GET /api/audit/:namespaceId` - Get audit log for a namespace
   - Query params: `limit`, `offset`, `operation`
 - `GET /api/audit/user/:userEmail` - Get audit log for a specific user
   - Query params: `limit`, `offset`, `operation`
-
-### Job Events
-- `GET /api/jobs/:jobId/events` - Get lifecycle event history for a job
-  - Returns: Chronological list of events (started, progress_25, progress_50, progress_75, completed/failed)
-  - User authorization: Only job owner can view events
-  - Use case: Job history, debugging, event replay
 
 ## Database Schema
 
@@ -341,6 +356,7 @@ See `worker/schema.sql` for the complete schema definition.
 ### Navigation
 - **Namespaces View**: Browse and manage KV namespaces
 - **Search View**: Cross-namespace key search with filters
+- **Job History View**: View all bulk operations with event timelines
 - **Audit Log View**: Operation history and tracking
 
 ### Theme Support
@@ -392,6 +408,15 @@ Theme preference is stored in localStorage and persists across sessions.
 3. Filter by specific namespace (optional)
 4. Filter by tags (comma-separated, optional)
 5. Click any result to navigate to that key
+
+### Job History
+1. Click **Job History** in the navigation bar
+2. View all your bulk operations (import, export, bulk delete, etc.)
+3. Filter by status (completed, failed, cancelled, running, queued)
+4. Filter by operation type
+5. Click any job card to view detailed event timeline
+6. See milestone events: started → 25% → 50% → 75% → completed
+7. After any bulk operation completes, click **View History** in the progress dialog
 
 ### Audit Logs
 1. Click **Audit Log** in the navigation bar
@@ -475,8 +500,8 @@ npx wrangler d1 list
 1. ✅ ~~Add WebSocket support for real-time progress~~ — **Completed!**
 2. ✅ ~~Implement Durable Objects for large operations~~ — **Completed!**
 3. ✅ ~~Add Audit Event Logging (foundation for job history & replay)~~ — **Completed!**
-4. ✅ ~~Add Operation Cancellation Support~~ — **Completed!** WebSocket channel handles `{ type: "cancel" }` messages, updates job status, and logs cancellation events.
-5. **Add Job History UI** — display event timeline and progress history using the `GET /api/jobs/:jobId/events` endpoint.
+4. ✅ ~~Add Operation Cancellation Support~~ — **Completed!**
+5. ✅ ~~Add Job History UI~~ — **Completed!** Full UI with event timeline visualization, job filtering, pagination, and "View History" button integration.
 6. Add advanced search filters
 
 ### Future Enhancements:
