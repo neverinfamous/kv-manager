@@ -8,6 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Advanced Job History Filters**: Comprehensive filtering and sorting system for job history
+  - **Namespace Filter**: Filter jobs by specific namespace from dropdown
+  - **Date Range Filter**: Select preset ranges (Last 24h, Last 7 days, Last 30 days) or custom date range with calendar picker
+  - **Job ID Search**: Debounced text search with partial matching (500ms delay)
+  - **Error Threshold Filter**: Filter jobs by minimum error count
+  - **Multi-Column Sorting**: Sort by Started At, Completed At, Total Keys, Error Count, or Progress Percentage
+  - **Sort Order Toggle**: Switch between ascending/descending with visual arrow indicators
+  - **Clear All Filters**: Single button to reset all filters to defaults
+  - **Combinable Filters**: All filters work simultaneously for precise job discovery
+  - **Enhanced UI Layout**: Responsive 3-column grid with 9 filter controls organized in 3 rows
+  - New UI components: Popover and Calendar (react-day-picker with date-fns)
+  - Real-time filter updates with automatic data reload
+  
+- **Enhanced Job History API**:
+  - Extended `GET /api/jobs` endpoint with 7 new query parameters:
+    - `namespace_id` - Filter by specific namespace
+    - `start_date`, `end_date` - Filter by date range (ISO timestamps)
+    - `job_id` - Search by job ID (partial match with SQL LIKE)
+    - `min_errors` - Filter jobs with error_count >= threshold
+    - `sort_by` - Column to sort by (started_at, completed_at, total_keys, error_count, percentage)
+    - `sort_order` - Sort direction (asc or desc, default: desc)
+  - SQL injection prevention: Sort column validation with whitelist
+  - Enhanced mock data with varied namespaces and timestamps for testing
+  - Backward compatible with existing filter parameters (status, operation_type)
+
 - **Job History UI**: Comprehensive user interface for viewing job event timelines and operation history
   - New "Job History" navigation tab displaying all user's bulk operations
   - Job list view with filtering by status (completed, failed, cancelled, running, queued) and operation type

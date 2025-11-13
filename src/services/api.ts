@@ -643,12 +643,26 @@ class APIService {
     offset?: number
     status?: string
     operation_type?: string
+    namespace_id?: string
+    start_date?: string
+    end_date?: string
+    job_id?: string
+    min_errors?: number
+    sort_by?: string
+    sort_order?: 'asc' | 'desc'
   }): Promise<JobListResponse> {
     const params = new URLSearchParams()
     if (options?.limit) params.set('limit', options.limit.toString())
     if (options?.offset) params.set('offset', options.offset.toString())
     if (options?.status) params.set('status', options.status)
     if (options?.operation_type) params.set('operation_type', options.operation_type)
+    if (options?.namespace_id) params.set('namespace_id', options.namespace_id)
+    if (options?.start_date) params.set('start_date', options.start_date)
+    if (options?.end_date) params.set('end_date', options.end_date)
+    if (options?.job_id) params.set('job_id', options.job_id)
+    if (options?.min_errors !== undefined) params.set('min_errors', options.min_errors.toString())
+    if (options?.sort_by) params.set('sort_by', options.sort_by)
+    if (options?.sort_order) params.set('sort_order', options.sort_order)
 
     const response = await fetch(
       `${WORKER_API}/api/jobs?${params.toString()}`,

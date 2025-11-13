@@ -1,6 +1,6 @@
 # Cloudflare KV Manager
 
-*Last Updated: November 14, 2025*
+*Last Updated: November 13, 2025*
 
 A modern, full-featured web application for managing Cloudflare Workers KV namespaces and keys, with enterprise-grade authentication via Cloudflare Access Zero Trust.
 
@@ -301,9 +301,17 @@ wrangler deploy
 
 ### Job History
 - `GET /api/jobs` - Get paginated list of user's jobs
-  - Query params: `limit`, `offset`, `status`, `operation_type`
+  - Query params: 
+    - `limit`, `offset` - Pagination
+    - `status` - Filter by job status (completed, failed, cancelled, running, queued)
+    - `operation_type` - Filter by operation (export, import, bulk_copy, bulk_delete, bulk_ttl_update, bulk_tag)
+    - `namespace_id` - Filter by specific namespace
+    - `start_date`, `end_date` - Filter by date range (ISO timestamps)
+    - `job_id` - Search by job ID (partial match with LIKE)
+    - `min_errors` - Filter jobs with error_count >= threshold
+    - `sort_by` - Column to sort by (started_at, completed_at, total_keys, error_count, percentage)
+    - `sort_order` - Sort direction (asc or desc, default: desc)
   - Returns: Job list with metadata, progress, and timestamps
-  - Ordered by `started_at DESC` (newest first)
 - `GET /api/jobs/:jobId/events` - Get lifecycle event history for a job
   - Returns: Chronological list of events (started, progress_25, progress_50, progress_75, completed/failed/cancelled)
   - User authorization: Only job owner can view events
@@ -412,11 +420,24 @@ Theme preference is stored in localStorage and persists across sessions.
 ### Job History
 1. Click **Job History** in the navigation bar
 2. View all your bulk operations (import, export, bulk delete, etc.)
-3. Filter by status (completed, failed, cancelled, running, queued)
-4. Filter by operation type
-5. Click any job card to view detailed event timeline
-6. See milestone events: started → 25% → 50% → 75% → completed
-7. After any bulk operation completes, click **View History** in the progress dialog
+3. Use advanced filters to find specific jobs:
+   - **Status Filter**: Filter by completed, failed, cancelled, running, or queued
+   - **Operation Type**: Filter by export, import, bulk copy, bulk delete, bulk TTL, or bulk tag
+   - **Namespace Filter**: Filter jobs by specific namespace
+   - **Date Range**: Select preset ranges (Last 24h, Last 7 days, Last 30 days) or custom date range
+   - **Job ID Search**: Search for jobs by their ID (partial matches supported)
+   - **Min Errors**: Filter jobs with a minimum error count threshold
+4. Sort results by:
+   - Started At (default)
+   - Completed At
+   - Total Keys
+   - Error Count
+   - Progress Percentage
+5. Toggle sort order between ascending and descending
+6. Click **Clear All Filters** to reset all filters to defaults
+7. Click any job card to view detailed event timeline
+8. See milestone events: started → 25% → 50% → 75% → completed
+9. After any bulk operation completes, click **View History** in the progress dialog
 
 ### Audit Logs
 1. Click **Audit Log** in the navigation bar
@@ -502,7 +523,7 @@ npx wrangler d1 list
 3. ✅ ~~Add Audit Event Logging (foundation for job history & replay)~~ — **Completed!**
 4. ✅ ~~Add Operation Cancellation Support~~ — **Completed!**
 5. ✅ ~~Add Job History UI~~ — **Completed!** Full UI with event timeline visualization, job filtering, pagination, and "View History" button integration.
-6. Add advanced search filters
+6. ✅ ~~Add advanced search filters~~ — **Completed!** Comprehensive filtering system with namespace, date range (presets + custom picker), job ID search, error threshold, and multi-column sorting.
 
 ### Future Enhancements:
 1. R2 backup integration

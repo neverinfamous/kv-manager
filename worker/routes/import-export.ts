@@ -185,16 +185,23 @@ export async function handleImportExportRoutes(
       const offset = parseInt(url.searchParams.get('offset') || '0');
       const status = url.searchParams.get('status');
       const operationType = url.searchParams.get('operation_type');
+      const namespaceId = url.searchParams.get('namespace_id');
+      const startDate = url.searchParams.get('start_date');
+      const endDate = url.searchParams.get('end_date');
+      const jobId = url.searchParams.get('job_id');
+      const minErrors = url.searchParams.get('min_errors');
+      const sortBy = url.searchParams.get('sort_by') || 'started_at';
+      const sortOrder = url.searchParams.get('sort_order') || 'desc';
 
       if (isLocalDev || !db) {
-        // Return mock jobs for local dev
+        // Return mock jobs for local dev with varied data
         const response: APIResponse = {
           success: true,
           result: {
             jobs: [
               {
-                job_id: 'export-123',
-                namespace_id: 'test-namespace',
+                job_id: 'export-123-abc',
+                namespace_id: 'test-namespace-1',
                 operation_type: 'export',
                 status: 'completed',
                 total_keys: 1000,
@@ -206,8 +213,8 @@ export async function handleImportExportRoutes(
                 user_email: 'dev@localhost'
               },
               {
-                job_id: 'import-456',
-                namespace_id: 'test-namespace',
+                job_id: 'import-456-def',
+                namespace_id: 'test-namespace-2',
                 operation_type: 'import',
                 status: 'failed',
                 total_keys: 500,
@@ -217,9 +224,35 @@ export async function handleImportExportRoutes(
                 started_at: new Date(Date.now() - 7200000).toISOString(),
                 completed_at: new Date(Date.now() - 7000000).toISOString(),
                 user_email: 'dev@localhost'
+              },
+              {
+                job_id: 'bulk-copy-789-ghi',
+                namespace_id: 'test-namespace-1',
+                operation_type: 'bulk_copy',
+                status: 'completed',
+                total_keys: 2500,
+                processed_keys: 2500,
+                error_count: 5,
+                percentage: 100,
+                started_at: new Date(Date.now() - 86400000).toISOString(),
+                completed_at: new Date(Date.now() - 86300000).toISOString(),
+                user_email: 'dev@localhost'
+              },
+              {
+                job_id: 'bulk-delete-999-jkl',
+                namespace_id: 'test-namespace-3',
+                operation_type: 'bulk_delete',
+                status: 'completed',
+                total_keys: 150,
+                processed_keys: 150,
+                error_count: 0,
+                percentage: 100,
+                started_at: new Date(Date.now() - 172800000).toISOString(),
+                completed_at: new Date(Date.now() - 172700000).toISOString(),
+                user_email: 'dev@localhost'
               }
             ],
-            total: 2,
+            total: 4,
             limit,
             offset
           }
@@ -244,7 +277,40 @@ export async function handleImportExportRoutes(
         bindings.push(operationType);
       }
 
-      query += ' ORDER BY started_at DESC LIMIT ? OFFSET ?';
+      if (namespaceId) {
+        query += ' AND namespace_id = ?';
+        bindings.push(namespaceId);
+      }
+
+      if (startDate) {
+        query += ' AND started_at >= ?';
+        bindings.push(startDate);
+      }
+
+      if (endDate) {
+        query += ' AND started_at <= ?';
+        bindings.push(endDate);
+      }
+
+      if (jobId) {
+        query += ' AND job_id LIKE ?';
+        bindings.push(`%${jobId}%`);
+      }
+
+      if (minErrors) {
+        const minErrorsNum = parseInt(minErrors);
+        if (!isNaN(minErrorsNum)) {
+          query += ' AND error_count >= ?';
+          bindings.push(minErrorsNum);
+        }
+      }
+
+      // Validate sort column to prevent SQL injection
+      const validSortColumns = ['started_at', 'completed_at', 'total_keys', 'error_count', 'percentage'];
+      const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'started_at';
+      const sortDirection = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+      query += ` ORDER BY ${sortColumn} ${sortDirection} LIMIT ? OFFSET ?`;
       bindings.push(limit, offset);
 
       const jobs = await db.prepare(query).bind(...bindings).all();
@@ -261,6 +327,34 @@ export async function handleImportExportRoutes(
       if (operationType) {
         countQuery += ' AND operation_type = ?';
         countBindings.push(operationType);
+      }
+
+      if (namespaceId) {
+        countQuery += ' AND namespace_id = ?';
+        countBindings.push(namespaceId);
+      }
+
+      if (startDate) {
+        countQuery += ' AND started_at >= ?';
+        countBindings.push(startDate);
+      }
+
+      if (endDate) {
+        countQuery += ' AND started_at <= ?';
+        countBindings.push(endDate);
+      }
+
+      if (jobId) {
+        countQuery += ' AND job_id LIKE ?';
+        countBindings.push(`%${jobId}%`);
+      }
+
+      if (minErrors) {
+        const minErrorsNum = parseInt(minErrors);
+        if (!isNaN(minErrorsNum)) {
+          countQuery += ' AND error_count >= ?';
+          countBindings.push(minErrorsNum);
+        }
       }
 
       const countResult = await db.prepare(countQuery).bind(...countBindings).first();

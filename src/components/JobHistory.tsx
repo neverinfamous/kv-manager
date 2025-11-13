@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
 import { api, type JobListItem, type KVNamespace } from '../services/api';
-import { Loader2, CheckCircle2, XCircle, Ban, AlertCircle, FileText, Download, Upload, Copy, Clock, Tag, Trash2 } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Ban, AlertCircle, FileText, Download, Upload, Copy, Clock, Tag, Trash2, Search, Calendar as CalendarIcon, ArrowUp, ArrowDown, X } from 'lucide-react';
 import { JobHistoryDialog } from './JobHistoryDialog';
+import { format } from 'date-fns';
 
 interface JobHistoryProps {
   namespaces: KVNamespace[];
@@ -18,16 +22,28 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [operationFilter, setOperationFilter] = useState<string>('all');
+  const [namespaceFilter, setNamespaceFilter] = useState<string>('all');
+  const [datePreset, setDatePreset] = useState<string>('all');
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined });
+  const [jobIdSearch, setJobIdSearch] = useState<string>('');
+  const [jobIdInput, setJobIdInput] = useState<string>('');
+  const [minErrors, setMinErrors] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('started_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const limit = 20;
 
+  // Debounce job ID search
   useEffect(() => {
-    loadJobs(true);
-  }, [statusFilter, operationFilter]);
+    const timer = setTimeout(() => {
+      setJobIdSearch(jobIdInput);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [jobIdInput]);
 
-  const loadJobs = async (reset = false) => {
+  const loadJobs = useCallback(async (reset = false) => {
     try {
       setLoading(true);
       setError('');
@@ -38,6 +54,13 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
         offset: number;
         status?: string;
         operation_type?: string;
+        namespace_id?: string;
+        start_date?: string;
+        end_date?: string;
+        job_id?: string;
+        min_errors?: number;
+        sort_by?: string;
+        sort_order?: 'asc' | 'desc';
       } = {
         limit,
         offset: currentOffset,
@@ -50,6 +73,53 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
       if (operationFilter !== 'all') {
         options.operation_type = operationFilter;
       }
+
+      if (namespaceFilter !== 'all') {
+        options.namespace_id = namespaceFilter;
+      }
+
+      // Handle date range based on preset or custom selection
+      if (datePreset !== 'all' && datePreset !== 'custom') {
+        const now = new Date();
+        let startDate: Date;
+        
+        switch (datePreset) {
+          case '24h':
+            startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            break;
+          case '7d':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case '30d':
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          default:
+            startDate = now;
+        }
+        
+        options.start_date = startDate.toISOString();
+      } else if (datePreset === 'custom') {
+        if (dateRange.from) {
+          options.start_date = dateRange.from.toISOString();
+        }
+        if (dateRange.to) {
+          // Set to end of day
+          const endDate = new Date(dateRange.to);
+          endDate.setHours(23, 59, 59, 999);
+          options.end_date = endDate.toISOString();
+        }
+      }
+
+      if (jobIdSearch.trim()) {
+        options.job_id = jobIdSearch.trim();
+      }
+
+      if (minErrors.trim() && !isNaN(parseInt(minErrors))) {
+        options.min_errors = parseInt(minErrors);
+      }
+
+      options.sort_by = sortBy;
+      options.sort_order = sortOrder;
 
       const data = await api.getJobList(options);
 
@@ -68,10 +138,58 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, operationFilter, namespaceFilter, datePreset, dateRange, jobIdSearch, minErrors, sortBy, sortOrder, offset, jobs, limit]);
+
+  useEffect(() => {
+    loadJobs(true);
+  }, [statusFilter, operationFilter, namespaceFilter, datePreset, dateRange, jobIdSearch, minErrors, sortBy, sortOrder, loadJobs]);
 
   const handleLoadMore = () => {
     loadJobs(false);
+  };
+
+  const handleResetFilters = () => {
+    setStatusFilter('all');
+    setOperationFilter('all');
+    setNamespaceFilter('all');
+    setDatePreset('all');
+    setDateRange({ from: undefined, to: undefined });
+    setJobIdInput('');
+    setJobIdSearch('');
+    setMinErrors('');
+    setSortBy('started_at');
+    setSortOrder('desc');
+  };
+
+  const handleDatePresetChange = (value: string) => {
+    setDatePreset(value);
+    if (value !== 'custom') {
+      setDateRange({ from: undefined, to: undefined });
+    }
+  };
+
+  const toggleSortOrder = () => {
+    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  };
+
+  const getDateRangeDisplay = () => {
+    if (datePreset === 'all') return 'All Time';
+    if (datePreset === '24h') return 'Last 24 Hours';
+    if (datePreset === '7d') return 'Last 7 Days';
+    if (datePreset === '30d') return 'Last 30 Days';
+    if (datePreset === 'custom') {
+      if (dateRange.from && dateRange.to) {
+        return `${format(dateRange.from, 'MMM d, yyyy')} - ${format(dateRange.to, 'MMM d, yyyy')}`;
+      }
+      if (dateRange.from) {
+        return `From ${format(dateRange.from, 'MMM d, yyyy')}`;
+      }
+      if (dateRange.to) {
+        return `Until ${format(dateRange.to, 'MMM d, yyyy')}`;
+      }
+      return 'Select dates...';
+    }
+    return 'All Time';
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -190,42 +308,185 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Status Filter */}
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-                <SelectItem value="running">Running</SelectItem>
-                <SelectItem value="queued">Queued</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="space-y-4">
+          {/* Row 1: Status, Operation Type, Namespace */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Status Filter */}
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                  <SelectItem value="running">Running</SelectItem>
+                  <SelectItem value="queued">Queued</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Operation Type Filter */}
+            <div className="space-y-2">
+              <Label>Operation Type</Label>
+              <Select value={operationFilter} onValueChange={setOperationFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Operations" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Operations</SelectItem>
+                  <SelectItem value="export">Export</SelectItem>
+                  <SelectItem value="import">Import</SelectItem>
+                  <SelectItem value="bulk_copy">Bulk Copy</SelectItem>
+                  <SelectItem value="bulk_delete">Bulk Delete</SelectItem>
+                  <SelectItem value="bulk_ttl_update">Bulk TTL Update</SelectItem>
+                  <SelectItem value="bulk_tag">Bulk Tag</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Namespace Filter */}
+            <div className="space-y-2">
+              <Label>Namespace</Label>
+              <Select value={namespaceFilter} onValueChange={setNamespaceFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Namespaces" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Namespaces</SelectItem>
+                  {namespaces.map((ns) => (
+                    <SelectItem key={ns.id} value={ns.id}>
+                      {ns.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Operation Type Filter */}
-          <div className="space-y-2">
-            <Label>Operation Type</Label>
-            <Select value={operationFilter} onValueChange={setOperationFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="All Operations" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Operations</SelectItem>
-                <SelectItem value="export">Export</SelectItem>
-                <SelectItem value="import">Import</SelectItem>
-                <SelectItem value="bulk_copy">Bulk Copy</SelectItem>
-                <SelectItem value="bulk_delete">Bulk Delete</SelectItem>
-                <SelectItem value="bulk_ttl_update">Bulk TTL Update</SelectItem>
-                <SelectItem value="bulk_tag">Bulk Tag</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Row 2: Date Range, Job ID Search, Min Errors */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Date Range Filter */}
+            <div className="space-y-2">
+              <Label>Date Range</Label>
+              <div className="flex gap-2">
+                <Select value={datePreset} onValueChange={handleDatePresetChange}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="All Time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="24h">Last 24 Hours</SelectItem>
+                    <SelectItem value="7d">Last 7 Days</SelectItem>
+                    <SelectItem value="30d">Last 30 Days</SelectItem>
+                    <SelectItem value="custom">Custom Range</SelectItem>
+                  </SelectContent>
+                </Select>
+                {datePreset === 'custom' && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <span className="truncate">{getDateRangeDisplay()}</span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="range"
+                        selected={dateRange}
+                        onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
+                        numberOfMonths={2}
+                        defaultMonth={dateRange.from}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
+            </div>
+
+            {/* Job ID Search */}
+            <div className="space-y-2">
+              <Label>Job ID</Label>
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by Job ID..."
+                  value={jobIdInput}
+                  onChange={(e) => setJobIdInput(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+
+            {/* Min Errors Filter */}
+            <div className="space-y-2">
+              <Label>Min Errors</Label>
+              <Input
+                type="number"
+                min="0"
+                placeholder="Min errors..."
+                value={minErrors}
+                onChange={(e) => setMinErrors(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Row 3: Sort Controls and Reset */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Sort By */}
+            <div className="space-y-2">
+              <Label>Sort By</Label>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Started At" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="started_at">Started At</SelectItem>
+                  <SelectItem value="completed_at">Completed At</SelectItem>
+                  <SelectItem value="total_keys">Total Keys</SelectItem>
+                  <SelectItem value="error_count">Error Count</SelectItem>
+                  <SelectItem value="percentage">Progress</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort Order */}
+            <div className="space-y-2">
+              <Label>Sort Order</Label>
+              <Button
+                variant="outline"
+                onClick={toggleSortOrder}
+                className="w-full justify-start"
+              >
+                {sortOrder === 'desc' ? (
+                  <>
+                    <ArrowDown className="mr-2 h-4 w-4" />
+                    Descending
+                  </>
+                ) : (
+                  <>
+                    <ArrowUp className="mr-2 h-4 w-4" />
+                    Ascending
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Reset Filters */}
+            <div className="space-y-2">
+              <Label>&nbsp;</Label>
+              <Button
+                variant="outline"
+                onClick={handleResetFilters}
+                className="w-full"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Clear All Filters
+              </Button>
+            </div>
           </div>
         </div>
       </div>

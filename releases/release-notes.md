@@ -4,6 +4,27 @@
 
 > **Note:** Features marked with 🆕 are unreleased and available in the latest development version.
 
+## 🆕 Unreleased Features
+
+### Advanced Job History Filters
+The Job History UI now includes enterprise-grade filtering and sorting capabilities:
+
+- **Namespace Filter** - Filter jobs by specific namespace
+- **Date Range Picker** - Choose preset ranges (Last 24h, 7 days, 30 days) or select custom date range with calendar
+- **Job ID Search** - Search for specific jobs by ID with partial matching
+- **Error Threshold** - Filter jobs with minimum error count
+- **Multi-Column Sorting** - Sort by Started At, Completed At, Total Keys, Error Count, or Progress
+- **Sort Order Toggle** - Switch between ascending and descending with one click
+- **Clear All Filters** - Reset all filters instantly
+- **Combinable Filters** - Use multiple filters simultaneously for precise results
+
+**Technical Details:**
+- 7 new query parameters added to `GET /api/jobs` endpoint
+- SQL injection prevention with whitelist validation
+- Debounced search input (500ms) for optimal performance
+- Calendar component with date-fns formatting
+- Responsive 3-column grid layout adapting to screen size
+
 ## ✨ Key Features
 
 ### Namespace Management
