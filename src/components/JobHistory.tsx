@@ -141,7 +141,7 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, operationFilter, namespaceFilter, datePreset, dateRangeKey, jobIdSearch, minErrors, sortBy, sortOrder, offset, jobs, limit]);
+  }, [statusFilter, operationFilter, namespaceFilter, datePreset, dateRange.from, dateRange.to, jobIdSearch, minErrors, sortBy, sortOrder, offset, jobs, limit]);
 
   useEffect(() => {
     loadJobs(true);
