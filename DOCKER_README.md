@@ -12,8 +12,6 @@
 
 A fully containerized version of the KV Manager for Cloudflare. This Docker image provides a modern, full-featured web application for managing Cloudflare Workers KV namespaces and keys with enterprise-grade authentication via Cloudflare Access (Zero Trust).
 
-> **Development Features:** The latest development version includes operation cancellation support for bulk operations. See the [CHANGELOG](https://github.com/neverinfamous/kv-manager/blob/main/CHANGELOG.md) for unreleased features.
-
 **🎯 [Try the Live Demo](https://kv.adamic.tech/)** - See KV Manager in action
 
 **📰 [Read the v1.0.0 Release Article](https://adamic.tech/articles/2025-11-05-kv-manager-v1-0-0)** - Learn more about features, architecture, and deployment
@@ -101,6 +99,7 @@ This Docker image packages the complete KV Manager with:
 - **Metadata & Tags (D1-Backed)** - Unlimited tags and custom JSON metadata (no size limit)
 - **Search & Discovery** - Cross-namespace search by key name with tag filtering
 - **Bulk Operations** - Bulk delete, copy, TTL update, and tag operations with real-time WebSocket progress tracking
+- **Operation cancellation** - Job cancelation support for bulk operations
 - **Import/Export** - JSON/NDJSON format support with collision handling and live progress updates
 - **Async Processing** - Background job execution via Durable Objects for large operations
 - **Backup & Restore** - Single-version backup and restore for keys
