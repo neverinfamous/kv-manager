@@ -314,10 +314,9 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Status Filter */}
             <div className="space-y-2">
-              <Label>Status</Label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Statuses" />
+                <SelectTrigger aria-label="Status filter">
+                  <SelectValue placeholder="Status: All" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
@@ -332,10 +331,9 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
 
             {/* Operation Type Filter */}
             <div className="space-y-2">
-              <Label>Operation Type</Label>
               <Select value={operationFilter} onValueChange={setOperationFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Operations" />
+                <SelectTrigger aria-label="Operation type filter">
+                  <SelectValue placeholder="Operation: All" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Operations</SelectItem>
@@ -351,10 +349,9 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
 
             {/* Namespace Filter */}
             <div className="space-y-2">
-              <Label>Namespace</Label>
               <Select value={namespaceFilter} onValueChange={setNamespaceFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Namespaces" />
+                <SelectTrigger aria-label="Namespace filter">
+                  <SelectValue placeholder="Namespace: All" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Namespaces</SelectItem>
@@ -372,11 +369,10 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Date Range Filter */}
             <div className="space-y-2">
-              <Label>Date Range</Label>
               <div className="flex gap-2">
                 <Select value={datePreset} onValueChange={handleDatePresetChange}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="All Time" />
+                  <SelectTrigger className="flex-1" aria-label="Date range filter">
+                    <SelectValue placeholder="Date: All Time" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Time</SelectItem>
@@ -443,10 +439,9 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Sort By */}
             <div className="space-y-2">
-              <Label>Sort By</Label>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Started At" />
+                <SelectTrigger aria-label="Sort by">
+                  <SelectValue placeholder="Sort: Started At" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="started_at">Started At</SelectItem>
@@ -460,11 +455,11 @@ export function JobHistory({ namespaces }: JobHistoryProps) {
 
             {/* Sort Order */}
             <div className="space-y-2">
-              <Label>Sort Order</Label>
               <Button
                 variant="outline"
                 onClick={toggleSortOrder}
                 className="w-full justify-start"
+                aria-label="Toggle sort order"
               >
                 {sortOrder === 'desc' ? (
                   <>

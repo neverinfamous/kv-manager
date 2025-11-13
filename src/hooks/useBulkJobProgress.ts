@@ -303,17 +303,16 @@ export function useBulkJobProgress({
   useEffect(() => {
     isMountedRef.current = true;
     
-    // Connect asynchronously to avoid false-positive linting error
-    const timeoutId = setTimeout(() => {
-      connect();
-    }, 0);
+    // Start with polling instead of WebSocket
+    // WebSocket fails too quickly for small jobs, causing connection storms
+    // Polling is more reliable and simpler for typical use cases
+    startPolling();
 
     return () => {
-      clearTimeout(timeoutId);
       isMountedRef.current = false;
       disconnect();
     };
-  }, [connect, disconnect]);
+  }, [startPolling, disconnect]);
 
   return {
     progress,
