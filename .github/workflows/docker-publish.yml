@@ -107,8 +107,7 @@ jobs:
         push: false
         load: true
         tags: local-scan:latest
-        cache-from: type=gha
-        no-cache: false
+        no-cache: true  # Force fresh build to ensure latest security patches
         pull: true  # Always pull latest base images
 
     # Security scanning with Docker Scout CLI
