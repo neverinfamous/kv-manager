@@ -526,8 +526,9 @@ export default function App() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <div 
-              className="flex items-center gap-3 cursor-pointer"
-              onClick={() => setCurrentView({ type: 'list' })}
+              className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => window.location.reload()}
+              title="Refresh page"
             >
               <Database className="h-8 w-8 text-primary" />
               <div>

@@ -99,9 +99,11 @@ export function MetadataEditor({ namespaceId, keyName, onSave }: MetadataEditorP
 
       {/* Tags Section */}
       <div className="space-y-2">
-        <Label>Tags</Label>
+        <Label htmlFor="tag-input">Tags</Label>
         <div className="flex gap-2">
           <Input
+            id="tag-input"
+            name="tag-input"
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
             onKeyDown={(e) => {
@@ -136,8 +138,10 @@ export function MetadataEditor({ namespaceId, keyName, onSave }: MetadataEditorP
 
       {/* Custom Metadata Section */}
       <div className="space-y-2">
-        <Label>Custom Metadata (JSON)</Label>
+        <Label htmlFor="custom-metadata">Custom Metadata (JSON)</Label>
         <Textarea
+          id="custom-metadata"
+          name="custom-metadata"
           value={customMetadata}
           onChange={(e) => {
             setCustomMetadata(e.target.value)
