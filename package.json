@@ -50,7 +50,7 @@
     "globals": "^16.5.0",
     "postcss": "^8.5.6",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss": "^3.4.18",
+    "tailwindcss": "^3.4.19",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.48.1",
