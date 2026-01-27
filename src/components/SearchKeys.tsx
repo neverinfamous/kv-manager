@@ -1,83 +1,99 @@
-import React, { useState, useEffect } from 'react'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
-import { Badge } from './ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { Search, ExternalLink } from 'lucide-react'
-import { api, type SearchResult, type KVNamespace } from '../services/api'
-import { logger } from '../lib/logger'
+import React, { useState, useEffect } from "react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Badge } from "./ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Search, ExternalLink } from "lucide-react";
+import { api, type SearchResult, type KVNamespace } from "../services/api";
+import { logger } from "../lib/logger";
 
 interface SearchKeysProps {
-  namespaces: KVNamespace[]
-  onNavigateToKey?: (namespaceId: string, keyName: string) => void
+  namespaces: KVNamespace[];
+  onNavigateToKey?: (namespaceId: string, keyName: string) => void;
 }
 
-export function SearchKeys({ namespaces, onNavigateToKey }: SearchKeysProps): React.JSX.Element {
-  const [query, setQuery] = useState('')
-  const [selectedNamespace, setSelectedNamespace] = useState<string>('all')
-  const [tagFilter, setTagFilter] = useState('')
-  const [results, setResults] = useState<SearchResult[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [searchTriggered, setSearchTriggered] = useState(false)
+export function SearchKeys({
+  namespaces,
+  onNavigateToKey,
+}: SearchKeysProps): React.JSX.Element {
+  const [query, setQuery] = useState("");
+  const [selectedNamespace, setSelectedNamespace] = useState<string>("all");
+  const [tagFilter, setTagFilter] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [searchTriggered, setSearchTriggered] = useState(false);
 
   // Debounce search
   useEffect(() => {
     if (!query && !tagFilter) {
-      setResults([])
-      setSearchTriggered(false)
-      return
+      setResults([]);
+      setSearchTriggered(false);
+      return;
     }
 
     const timer = setTimeout((): void => {
-      performSearch()
-    }, 300)
+      performSearch();
+    }, 300);
 
-    return (): void => clearTimeout(timer)
+    return (): void => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, selectedNamespace, tagFilter])
+  }, [query, selectedNamespace, tagFilter]);
 
   const performSearch = async (): Promise<void> => {
     try {
-      setLoading(true)
-      setError('')
-      setSearchTriggered(true)
+      setLoading(true);
+      setError("");
+      setSearchTriggered(true);
 
       const searchOptions: {
-        query?: string
-        namespace_id?: string
-        tags?: string[]
-      } = {}
+        query?: string;
+        namespace_id?: string;
+        tags?: string[];
+      } = {};
 
-      if (query) searchOptions.query = query
-      if (selectedNamespace !== 'all') searchOptions.namespace_id = selectedNamespace
-      if (tagFilter) searchOptions.tags = tagFilter.split(',').map(t => t.trim()).filter(Boolean)
+      if (query) searchOptions.query = query;
+      if (selectedNamespace !== "all")
+        searchOptions.namespace_id = selectedNamespace;
+      if (tagFilter)
+        searchOptions.tags = tagFilter
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
 
-      const data = await api.searchKeys(searchOptions)
-      setResults(data)
+      const data = await api.searchKeys(searchOptions);
+      setResults(data);
     } catch (err) {
-      logger.error('Search failed', err)
-      setError(err instanceof Error ? err.message : 'Search failed')
+      logger.error("Search failed", err);
+      setError(err instanceof Error ? err.message : "Search failed");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleNavigate = (result: SearchResult): void => {
-    onNavigateToKey?.(result.namespace_id, result.key_name)
-  }
+    onNavigateToKey?.(result.namespace_id, result.key_name);
+  };
 
   return (
     <div className="space-y-4">
       <div className="bg-card rounded-lg border p-6">
         <h2 className="text-2xl font-bold mb-4">Search Keys</h2>
-        
+
         {/* Info Banner */}
         <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
           <p className="text-sm text-blue-900 dark:text-blue-100">
-            <strong>How Search Works:</strong> Search finds keys by their <strong>name</strong> or <strong>tags</strong> (not by namespace name or KV values). 
-            All keys created or updated through this UI are automatically searchable. You can search by key name, tags, or both.
+            <strong>How Search Works:</strong> Search finds keys by their{" "}
+            <strong>name</strong> or <strong>tags</strong> (not by namespace
+            name or KV values). All keys created or updated through this UI are
+            automatically searchable. You can search by key name, tags, or both.
           </p>
         </div>
 
@@ -106,7 +122,10 @@ export function SearchKeys({ namespaces, onNavigateToKey }: SearchKeysProps): Re
             {/* Namespace Filter */}
             <div className="space-y-2">
               <Label htmlFor="namespace-filter">Namespace</Label>
-              <Select value={selectedNamespace} onValueChange={setSelectedNamespace}>
+              <Select
+                value={selectedNamespace}
+                onValueChange={setSelectedNamespace}
+              >
                 <SelectTrigger id="namespace-filter" name="namespace-filter">
                   <SelectValue placeholder="All Namespaces" />
                 </SelectTrigger>
@@ -124,7 +143,9 @@ export function SearchKeys({ namespaces, onNavigateToKey }: SearchKeysProps): Re
 
           {/* Tag Filter */}
           <div className="space-y-2">
-            <Label htmlFor="tag-filter">Filter by Specific Tags (comma-separated)</Label>
+            <Label htmlFor="tag-filter">
+              Filter by Specific Tags (comma-separated)
+            </Label>
             <Input
               id="tag-filter"
               name="tag-filter"
@@ -165,13 +186,16 @@ export function SearchKeys({ namespaces, onNavigateToKey }: SearchKeysProps): Re
             <div className="divide-y">
               <div className="p-4 bg-muted/50">
                 <p className="text-sm font-medium">
-                  Found {results.length} result{results.length !== 1 ? 's' : ''}
+                  Found {results.length} result{results.length !== 1 ? "s" : ""}
                 </p>
               </div>
 
               <div className="divide-y">
                 {results.map((result, index) => (
-                  <div key={`${result.namespace_id}-${result.key_name}-${index}`} className="p-4 hover:bg-muted/50 transition-colors">
+                  <div
+                    key={`${result.namespace_id}-${result.key_name}-${index}`}
+                    className="p-4 hover:bg-muted/50 transition-colors"
+                  >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
@@ -180,12 +204,19 @@ export function SearchKeys({ namespaces, onNavigateToKey }: SearchKeysProps): Re
                           </span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Namespace: {namespaces.find(ns => ns.id === result.namespace_id)?.title || result.namespace_id}
+                          Namespace:{" "}
+                          {namespaces.find(
+                            (ns) => ns.id === result.namespace_id,
+                          )?.title || result.namespace_id}
                         </div>
                         {result.tags && result.tags.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
                             {result.tags.map((tag) => (
-                              <Badge key={tag} variant="secondary" className="text-xs">
+                              <Badge
+                                key={tag}
+                                variant="secondary"
+                                className="text-xs"
+                              >
                                 {tag}
                               </Badge>
                             ))}
@@ -209,6 +240,5 @@ export function SearchKeys({ namespaces, onNavigateToKey }: SearchKeysProps): Re
         </div>
       )}
     </div>
-  )
+  );
 }
-

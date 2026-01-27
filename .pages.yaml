@@ -6,4 +6,3 @@ build:
     - src/**
     - worker/**
     - package.json
-

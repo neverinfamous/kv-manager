@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import type { JobProgress } from '../services/api';
-import { api } from '../services/api';
-import { bulkJobLogger } from '../lib/logger';
+import { useState, useEffect, useRef, useCallback } from "react";
+import type { JobProgress } from "../services/api";
+import { api } from "../services/api";
+import { bulkJobLogger } from "../lib/logger";
 
 interface UseBulkJobProgressOptions {
   jobId: string;
@@ -27,7 +27,9 @@ const RATE_LIMIT_BACKOFF = 3000; // Add 3 seconds on rate limit
 interface PollingState {
   intervalId: number | null;
   currentInterval: number;
-  subscribers: Set<(progress: JobProgress | null, error: string | null) => void>;
+  subscribers: Set<
+    (progress: JobProgress | null, error: string | null) => void
+  >;
   lastProgress: JobProgress | null;
   lastError: string | null;
   isCompleted: boolean;
@@ -55,7 +57,7 @@ function getOrCreatePollingState(jobId: string): PollingState {
 }
 
 function notifySubscribers(state: PollingState): void {
-  state.subscribers.forEach(callback => {
+  state.subscribers.forEach((callback) => {
     callback(state.lastProgress, state.lastError);
   });
 }
@@ -76,11 +78,14 @@ async function pollJob(jobId: string): Promise<void> {
       // Restart polling with normal interval
       if (state.intervalId) {
         clearInterval(state.intervalId);
-        state.intervalId = window.setInterval(() => pollJob(jobId), state.currentInterval);
+        state.intervalId = window.setInterval(
+          () => pollJob(jobId),
+          state.currentInterval,
+        );
       }
     }
 
-    const currentKey = jobStatus['current_key'];
+    const currentKey = jobStatus["current_key"];
     const progressObj: {
       total: number;
       processed: number;
@@ -88,70 +93,84 @@ async function pollJob(jobId: string): Promise<void> {
       currentKey?: string;
       percentage: number;
     } = {
-      total: (jobStatus['total_keys'] as number) || 0,
-      processed: (jobStatus['processed_keys'] as number) || 0,
-      errors: (jobStatus['error_count'] as number) || 0,
-      percentage: (jobStatus['percentage'] as number) || 0,
+      total: (jobStatus["total_keys"] as number) || 0,
+      processed: (jobStatus["processed_keys"] as number) || 0,
+      errors: (jobStatus["error_count"] as number) || 0,
+      percentage: (jobStatus["percentage"] as number) || 0,
     };
-    if (currentKey && typeof currentKey === 'string') {
+    if (currentKey && typeof currentKey === "string") {
       progressObj.currentKey = currentKey;
     }
 
     const progressUpdate: JobProgress = {
-      jobId: jobStatus['job_id'] as string,
-      status: jobStatus['status'] as 'queued' | 'running' | 'completed' | 'failed',
+      jobId: jobStatus["job_id"] as string,
+      status: jobStatus["status"] as
+        | "queued"
+        | "running"
+        | "completed"
+        | "failed",
       progress: progressObj,
-      ...(jobStatus['download_url'] ? {
-        result: {
-          downloadUrl: jobStatus['download_url'] as string,
-          format: (jobStatus['format'] as string) || 'json',
-          processed: (jobStatus['processed_keys'] as number) || 0,
-          errors: (jobStatus['error_count'] as number) || 0,
-        }
-      } : {}),
+      ...(jobStatus["download_url"]
+        ? {
+            result: {
+              downloadUrl: jobStatus["download_url"] as string,
+              format: (jobStatus["format"] as string) || "json",
+              processed: (jobStatus["processed_keys"] as number) || 0,
+              errors: (jobStatus["error_count"] as number) || 0,
+            },
+          }
+        : {}),
     };
 
     state.lastProgress = progressUpdate;
     state.lastError = null;
     notifySubscribers(state);
 
-    if (progressUpdate.status === 'completed' || progressUpdate.status === 'failed') {
+    if (
+      progressUpdate.status === "completed" ||
+      progressUpdate.status === "failed"
+    ) {
       state.isCompleted = true;
       stopPollingJob(jobId);
     }
   } catch (err) {
-    const isRateLimit = err instanceof Error && (
-      err.message.includes('429') ||
-      err.message.includes('Too Many Requests')
-    );
+    const isRateLimit =
+      err instanceof Error &&
+      (err.message.includes("429") ||
+        err.message.includes("Too Many Requests"));
 
     if (isRateLimit) {
       // Increase polling interval on rate limit
       state.currentInterval = Math.min(
         state.currentInterval + RATE_LIMIT_BACKOFF,
-        MAX_POLLING_INTERVAL
+        MAX_POLLING_INTERVAL,
       );
-      bulkJobLogger.warn('Rate limited, slowing polling', { interval: state.currentInterval });
+      bulkJobLogger.warn("Rate limited, slowing polling", {
+        interval: state.currentInterval,
+      });
 
       // Restart polling with new interval
       if (state.intervalId) {
         clearInterval(state.intervalId);
-        state.intervalId = window.setInterval(() => pollJob(jobId), state.currentInterval);
+        state.intervalId = window.setInterval(
+          () => pollJob(jobId),
+          state.currentInterval,
+        );
       }
       return;
     }
 
     // For non-rate-limit errors
-    bulkJobLogger.error('Polling error', err);
+    bulkJobLogger.error("Polling error", err);
     state.consecutiveErrors++;
 
     if (state.consecutiveErrors >= 10) {
-      bulkJobLogger.error('Too many consecutive errors, stopping polling');
-      state.lastError = 'Connection error - polling stopped';
+      bulkJobLogger.error("Too many consecutive errors, stopping polling");
+      state.lastError = "Connection error - polling stopped";
       notifySubscribers(state);
       stopPollingJob(jobId);
     } else {
-      state.lastError = err instanceof Error ? err.message : 'Polling failed';
+      state.lastError = err instanceof Error ? err.message : "Polling failed";
       notifySubscribers(state);
     }
   }
@@ -172,7 +191,10 @@ function startPollingJob(jobId: string): void {
 
   // Start polling - immediate first poll, then on interval
   pollJob(jobId);
-  state.intervalId = window.setInterval(() => pollJob(jobId), state.currentInterval);
+  state.intervalId = window.setInterval(
+    () => pollJob(jobId),
+    state.currentInterval,
+  );
 }
 
 function stopPollingJob(jobId: string): void {
@@ -185,7 +207,7 @@ function stopPollingJob(jobId: string): void {
 
 function subscribeToJob(
   jobId: string,
-  callback: (progress: JobProgress | null, error: string | null) => void
+  callback: (progress: JobProgress | null, error: string | null) => void,
 ): () => void {
   const state = getOrCreatePollingState(jobId);
   state.subscribers.add(callback);
@@ -216,7 +238,7 @@ function subscribeToJob(
 
 /**
  * Custom hook for tracking bulk job progress via HTTP polling
- * 
+ *
  * Uses a global singleton manager to ensure only ONE polling loop per job,
  * even if multiple hook instances exist (e.g., from React StrictMode).
  */
@@ -240,16 +262,19 @@ export function useBulkJobProgress({
   }, [onComplete, onError]);
 
   // Handle progress updates
-  const handleUpdate = useCallback((newProgress: JobProgress | null, newError: string | null) => {
-    setProgress(newProgress);
-    setError(newError);
+  const handleUpdate = useCallback(
+    (newProgress: JobProgress | null, newError: string | null) => {
+      setProgress(newProgress);
+      setError(newError);
 
-    if (newProgress?.status === 'completed' && onCompleteRef.current) {
-      onCompleteRef.current(newProgress);
-    } else if (newProgress?.status === 'failed' && onErrorRef.current) {
-      onErrorRef.current('Job failed');
-    }
-  }, []);
+      if (newProgress?.status === "completed" && onCompleteRef.current) {
+        onCompleteRef.current(newProgress);
+      } else if (newProgress?.status === "failed" && onErrorRef.current) {
+        onErrorRef.current("Job failed");
+      }
+    },
+    [],
+  );
 
   // Subscribe to job updates
   useEffect(() => {

@@ -1,260 +1,328 @@
 /**
  * Migration Routes
- * 
+ *
  * API endpoints for managing database schema migrations.
  * Provides status checking and migration application functionality.
  */
 
-import type { Env, CorsHeaders, ErrorContext } from '../types';
+import type { Env, CorsHeaders, ErrorContext } from "../types";
 import {
-    getMigrationStatus,
-    applyMigrations,
-    detectLegacyInstallation,
-    markMigrationsAsApplied
-} from '../utils/migrations';
-import { logInfo, logWarning, logError } from '../utils/error-logger';
+  getMigrationStatus,
+  applyMigrations,
+  detectLegacyInstallation,
+  markMigrationsAsApplied,
+} from "../utils/migrations";
+import { logInfo, logWarning, logError } from "../utils/error-logger";
 
 /**
  * Helper to create JSON response headers
  */
 function jsonHeaders(corsHeaders: CorsHeaders): Headers {
-    const headers = new Headers(corsHeaders);
-    headers.set('Content-Type', 'application/json');
-    return headers;
+  const headers = new Headers(corsHeaders);
+  headers.set("Content-Type", "application/json");
+  return headers;
 }
 
 /**
  * Helper to create error context with optional userId
  */
 function createContext(
-    module: string,
-    operation: string,
-    userEmail: string | null,
-    metadata?: Record<string, unknown>
+  module: string,
+  operation: string,
+  userEmail: string | null,
+  metadata?: Record<string, unknown>,
 ): ErrorContext {
-    const ctx: ErrorContext = { module, operation };
-    if (userEmail) {
-        ctx['userId'] = userEmail;
-    }
-    if (metadata) {
-        ctx['metadata'] = metadata;
-    }
-    return ctx;
+  const ctx: ErrorContext = { module, operation };
+  if (userEmail) {
+    ctx["userId"] = userEmail;
+  }
+  if (metadata) {
+    ctx["metadata"] = metadata;
+  }
+  return ctx;
 }
 
 /**
  * Handle migration-related API routes
- * 
+ *
  * Routes:
  * - GET /api/migrations/status - Get current migration status
  * - POST /api/migrations/apply - Apply all pending migrations
  * - POST /api/migrations/mark-legacy - Mark migrations as applied for legacy installations
  */
 export async function handleMigrationRoutes(
-    request: Request,
-    env: Env,
-    url: URL,
-    corsHeaders: CorsHeaders,
-    isLocalDev: boolean,
-    userEmail: string | null
+  request: Request,
+  env: Env,
+  url: URL,
+  corsHeaders: CorsHeaders,
+  isLocalDev: boolean,
+  userEmail: string | null,
 ): Promise<Response | null> {
-    const db = env.METADATA;
+  const db = env.METADATA;
 
-    // GET /api/migrations/status - Get migration status
-    if (request.method === 'GET' && url.pathname === '/api/migrations/status') {
-        logInfo('Checking migration status', createContext('migrations', 'status', userEmail));
+  // GET /api/migrations/status - Get migration status
+  if (request.method === "GET" && url.pathname === "/api/migrations/status") {
+    logInfo(
+      "Checking migration status",
+      createContext("migrations", "status", userEmail),
+    );
 
-        if (isLocalDev) {
-            // In local dev, return mock status showing up-to-date
-            const mockStatus = {
-                currentVersion: 3,
-                latestVersion: 3,
-                pendingMigrations: [],
-                appliedMigrations: [
-                    { version: 1, migration_name: 'initial_schema', applied_at: new Date().toISOString() },
-                    { version: 2, migration_name: 'job_audit_events', applied_at: new Date().toISOString() },
-                    { version: 3, migration_name: 'webhooks', applied_at: new Date().toISOString() }
-                ],
-                isUpToDate: true
-            };
+    if (isLocalDev) {
+      // In local dev, return mock status showing up-to-date
+      const mockStatus = {
+        currentVersion: 3,
+        latestVersion: 3,
+        pendingMigrations: [],
+        appliedMigrations: [
+          {
+            version: 1,
+            migration_name: "initial_schema",
+            applied_at: new Date().toISOString(),
+          },
+          {
+            version: 2,
+            migration_name: "job_audit_events",
+            applied_at: new Date().toISOString(),
+          },
+          {
+            version: 3,
+            migration_name: "webhooks",
+            applied_at: new Date().toISOString(),
+          },
+        ],
+        isUpToDate: true,
+      };
 
-            return new Response(JSON.stringify({
-                result: mockStatus,
-                success: true
-            }), {
-                headers: jsonHeaders(corsHeaders)
-            });
-        }
-
-        try {
-            const status = await getMigrationStatus(db);
-
-            // Also check for legacy installation
-            const legacyInfo = await detectLegacyInstallation(db);
-
-            return new Response(JSON.stringify({
-                result: {
-                    ...status,
-                    legacy: legacyInfo
-                },
-                success: true
-            }), {
-                headers: jsonHeaders(corsHeaders)
-            });
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-            // Log detailed error server-side only
-            logWarning(`Failed to get migration status: ${errorMessage}`, createContext('migrations', 'status', userEmail));
-
-            return new Response(JSON.stringify({
-                error: 'Failed to get migration status',
-                success: false
-            }), {
-                status: 500,
-                headers: jsonHeaders(corsHeaders)
-            });
-        }
+      return new Response(
+        JSON.stringify({
+          result: mockStatus,
+          success: true,
+        }),
+        {
+          headers: jsonHeaders(corsHeaders),
+        },
+      );
     }
 
-    // POST /api/migrations/apply - Apply pending migrations
-    if (request.method === 'POST' && url.pathname === '/api/migrations/apply') {
-        logInfo('Applying migrations', createContext('migrations', 'apply', userEmail));
+    try {
+      const status = await getMigrationStatus(db);
 
-        if (isLocalDev) {
-            // In local dev, return mock success
-            const mockResult = {
-                success: true,
-                migrationsApplied: 0,
-                currentVersion: 3,
-                errors: []
-            };
+      // Also check for legacy installation
+      const legacyInfo = await detectLegacyInstallation(db);
 
-            return new Response(JSON.stringify({
-                result: mockResult,
-                success: true
-            }), {
-                headers: jsonHeaders(corsHeaders)
-            });
-        }
+      return new Response(
+        JSON.stringify({
+          result: {
+            ...status,
+            legacy: legacyInfo,
+          },
+          success: true,
+        }),
+        {
+          headers: jsonHeaders(corsHeaders),
+        },
+      );
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      // Log detailed error server-side only
+      logWarning(
+        `Failed to get migration status: ${errorMessage}`,
+        createContext("migrations", "status", userEmail),
+      );
 
-        try {
-            const result = await applyMigrations(db);
+      return new Response(
+        JSON.stringify({
+          error: "Failed to get migration status",
+          success: false,
+        }),
+        {
+          status: 500,
+          headers: jsonHeaders(corsHeaders),
+        },
+      );
+    }
+  }
 
-            if (result.success) {
-                logInfo(
-                    `Successfully applied ${result.migrationsApplied} migration(s)`,
-                    createContext('migrations', 'apply', userEmail, {
-                        migrationsApplied: result.migrationsApplied,
-                        currentVersion: result.currentVersion
-                    })
-                );
-            } else {
-                void logError(
-                    env,
-                    `Migration failed: ${result.errors.join(', ')}`,
-                    createContext('migrations', 'apply', userEmail, { errors: result.errors }),
-                    isLocalDev
-                );
-            }
+  // POST /api/migrations/apply - Apply pending migrations
+  if (request.method === "POST" && url.pathname === "/api/migrations/apply") {
+    logInfo(
+      "Applying migrations",
+      createContext("migrations", "apply", userEmail),
+    );
 
-            return new Response(JSON.stringify({
-                result,
-                success: result.success
-            }), {
-                status: result.success ? 200 : 500,
-                headers: jsonHeaders(corsHeaders)
-            });
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-            // Log detailed error server-side only
-            void logError(
-                env,
-                `Failed to apply migrations: ${errorMessage}`,
-                createContext('migrations', 'apply', userEmail),
-                isLocalDev
-            );
+    if (isLocalDev) {
+      // In local dev, return mock success
+      const mockResult = {
+        success: true,
+        migrationsApplied: 0,
+        currentVersion: 3,
+        errors: [],
+      };
 
-            return new Response(JSON.stringify({
-                error: 'Failed to apply migrations',
-                success: false
-            }), {
-                status: 500,
-                headers: jsonHeaders(corsHeaders)
-            });
-        }
+      return new Response(
+        JSON.stringify({
+          result: mockResult,
+          success: true,
+        }),
+        {
+          headers: jsonHeaders(corsHeaders),
+        },
+      );
     }
 
-    // POST /api/migrations/mark-legacy - Mark migrations as applied for legacy installations
-    if (request.method === 'POST' && url.pathname === '/api/migrations/mark-legacy') {
-        logInfo('Marking legacy migrations', createContext('migrations', 'mark_legacy', userEmail));
+    try {
+      const result = await applyMigrations(db);
 
-        if (isLocalDev) {
-            return new Response(JSON.stringify({
-                result: { markedUpTo: 3 },
-                success: true
-            }), {
-                headers: jsonHeaders(corsHeaders)
-            });
-        }
+      if (result.success) {
+        logInfo(
+          `Successfully applied ${result.migrationsApplied} migration(s)`,
+          createContext("migrations", "apply", userEmail, {
+            migrationsApplied: result.migrationsApplied,
+            currentVersion: result.currentVersion,
+          }),
+        );
+      } else {
+        void logError(
+          env,
+          `Migration failed: ${result.errors.join(", ")}`,
+          createContext("migrations", "apply", userEmail, {
+            errors: result.errors,
+          }),
+          isLocalDev,
+        );
+      }
 
-        try {
-            // Parse request body for version to mark up to
-            const body = await request.json() as { version?: number };
-            const targetVersion = body.version;
+      return new Response(
+        JSON.stringify({
+          result,
+          success: result.success,
+        }),
+        {
+          status: result.success ? 200 : 500,
+          headers: jsonHeaders(corsHeaders),
+        },
+      );
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      // Log detailed error server-side only
+      void logError(
+        env,
+        `Failed to apply migrations: ${errorMessage}`,
+        createContext("migrations", "apply", userEmail),
+        isLocalDev,
+      );
 
-            if (typeof targetVersion !== 'number' || targetVersion < 1) {
-                return new Response(JSON.stringify({
-                    error: 'Invalid version',
-                    message: 'Please provide a valid version number to mark as applied',
-                    success: false
-                }), {
-                    status: 400,
-                    headers: jsonHeaders(corsHeaders)
-                });
-            }
+      return new Response(
+        JSON.stringify({
+          error: "Failed to apply migrations",
+          success: false,
+        }),
+        {
+          status: 500,
+          headers: jsonHeaders(corsHeaders),
+        },
+      );
+    }
+  }
 
-            // First verify this looks like a legacy installation
-            const legacyInfo = await detectLegacyInstallation(db);
+  // POST /api/migrations/mark-legacy - Mark migrations as applied for legacy installations
+  if (
+    request.method === "POST" &&
+    url.pathname === "/api/migrations/mark-legacy"
+  ) {
+    logInfo(
+      "Marking legacy migrations",
+      createContext("migrations", "mark_legacy", userEmail),
+    );
 
-            if (!legacyInfo.isLegacy && legacyInfo.suggestedVersion === 0) {
-                return new Response(JSON.stringify({
-                    error: 'Not a legacy installation',
-                    message: 'This installation does not appear to have pre-existing tables. Use the regular apply endpoint instead.',
-                    success: false
-                }), {
-                    status: 400,
-                    headers: jsonHeaders(corsHeaders)
-                });
-            }
-
-            await markMigrationsAsApplied(db, targetVersion);
-
-            logInfo(
-                `Marked migrations up to version ${targetVersion} as applied`,
-                createContext('migrations', 'mark_legacy', userEmail, { version: targetVersion })
-            );
-
-            return new Response(JSON.stringify({
-                result: { markedUpTo: targetVersion },
-                success: true
-            }), {
-                headers: jsonHeaders(corsHeaders)
-            });
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-            // Log detailed error server-side only
-            logWarning(`Failed to mark legacy migrations: ${errorMessage}`, createContext('migrations', 'mark_legacy', userEmail));
-
-            return new Response(JSON.stringify({
-                error: 'Failed to mark migrations',
-                success: false
-            }), {
-                status: 500,
-                headers: jsonHeaders(corsHeaders)
-            });
-        }
+    if (isLocalDev) {
+      return new Response(
+        JSON.stringify({
+          result: { markedUpTo: 3 },
+          success: true,
+        }),
+        {
+          headers: jsonHeaders(corsHeaders),
+        },
+      );
     }
 
-    // Route not handled
-    return null;
+    try {
+      // Parse request body for version to mark up to
+      const body = (await request.json()) as { version?: number };
+      const targetVersion = body.version;
+
+      if (typeof targetVersion !== "number" || targetVersion < 1) {
+        return new Response(
+          JSON.stringify({
+            error: "Invalid version",
+            message: "Please provide a valid version number to mark as applied",
+            success: false,
+          }),
+          {
+            status: 400,
+            headers: jsonHeaders(corsHeaders),
+          },
+        );
+      }
+
+      // First verify this looks like a legacy installation
+      const legacyInfo = await detectLegacyInstallation(db);
+
+      if (!legacyInfo.isLegacy && legacyInfo.suggestedVersion === 0) {
+        return new Response(
+          JSON.stringify({
+            error: "Not a legacy installation",
+            message:
+              "This installation does not appear to have pre-existing tables. Use the regular apply endpoint instead.",
+            success: false,
+          }),
+          {
+            status: 400,
+            headers: jsonHeaders(corsHeaders),
+          },
+        );
+      }
+
+      await markMigrationsAsApplied(db, targetVersion);
+
+      logInfo(
+        `Marked migrations up to version ${targetVersion} as applied`,
+        createContext("migrations", "mark_legacy", userEmail, {
+          version: targetVersion,
+        }),
+      );
+
+      return new Response(
+        JSON.stringify({
+          result: { markedUpTo: targetVersion },
+          success: true,
+        }),
+        {
+          headers: jsonHeaders(corsHeaders),
+        },
+      );
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      // Log detailed error server-side only
+      logWarning(
+        `Failed to mark legacy migrations: ${errorMessage}`,
+        createContext("migrations", "mark_legacy", userEmail),
+      );
+
+      return new Response(
+        JSON.stringify({
+          error: "Failed to mark migrations",
+          success: false,
+        }),
+        {
+          status: 500,
+          headers: jsonHeaders(corsHeaders),
+        },
+      );
+    }
+  }
+
+  // Route not handled
+  return null;
 }

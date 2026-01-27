@@ -1,13 +1,13 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
   build: {
@@ -15,37 +15,36 @@ export default defineConfig({
       output: {
         manualChunks: {
           // React core
-          'vendor-react': ['react', 'react-dom'],
+          "vendor-react": ["react", "react-dom"],
           // UI components (Radix primitives)
-          'vendor-radix': [
-            '@radix-ui/react-accordion',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-label',
-            '@radix-ui/react-popover',
-            '@radix-ui/react-progress',
-            '@radix-ui/react-select',
-            '@radix-ui/react-slot',
-            '@radix-ui/react-tabs',
+          "vendor-radix": [
+            "@radix-ui/react-accordion",
+            "@radix-ui/react-checkbox",
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-label",
+            "@radix-ui/react-popover",
+            "@radix-ui/react-progress",
+            "@radix-ui/react-select",
+            "@radix-ui/react-slot",
+            "@radix-ui/react-tabs",
           ],
           // Icons
-          'vendor-icons': ['lucide-react'],
+          "vendor-icons": ["lucide-react"],
           // Date utilities
-          'vendor-date': ['date-fns', 'react-day-picker'],
+          "vendor-date": ["date-fns", "react-day-picker"],
           // Other utilities
-          'vendor-utils': ['class-variance-authority', 'jszip', 'jose'],
+          "vendor-utils": ["class-variance-authority", "jszip", "jose"],
         },
       },
     },
   },
   server: {
     proxy: {
-      '/api': {
-        target: 'http://localhost:8787',
+      "/api": {
+        target: "http://localhost:8787",
         changeOrigin: true,
       },
     },
   },
-})
-
+});

@@ -7,6 +7,7 @@
 ## 🆕 Unreleased Features
 
 ### Batch R2 Backup & Restore
+
 Multi-namespace backup and restore operations to/from R2 for efficient bulk management:
 
 - **Batch Backup Selected to R2** - Back up multiple selected namespaces to R2 in a single operation
@@ -21,14 +22,17 @@ Multi-namespace backup and restore operations to/from R2 for efficient bulk mana
 - **Job History Integration** - Operations appear as `batch_r2_backup` and `batch_r2_restore` types
 
 **New API Endpoints:**
+
 - `POST /api/r2-backup/batch` - Start batch backup of multiple namespaces
 - `POST /api/r2-restore/batch` - Start batch restore of multiple namespaces with backup path mapping
 
 **Database Migration Required:**
+
 - Migration 003 adds `metadata` column to `bulk_jobs` table for storing batch operation details
 - See the [Migration Guide](https://github.com/neverinfamous/kv-manager/wiki/Migration-Guide) for instructions
 
 ### R2 Backup & Restore
+
 Complete R2 integration for secure namespace backups directly to Cloudflare R2 storage:
 
 - **Backup to R2** - Create full snapshots of any namespace to R2 with one click
@@ -42,6 +46,7 @@ Complete R2 integration for secure namespace backups directly to Cloudflare R2 s
 - **UI Integration** - New "Backup to R2" and "Restore from R2" buttons on namespace cards
 
 **Setup:**
+
 ```bash
 # Create R2 bucket
 wrangler r2 bucket create kv-manager-backups
@@ -53,11 +58,13 @@ bucket_name = "kv-manager-backups"
 ```
 
 **New API Endpoints:**
+
 - `GET /api/r2-backup/:namespaceId/list` - List available backups for namespace
 - `POST /api/r2-backup/:namespaceId` - Start async backup to R2
 - `POST /api/r2-restore/:namespaceId` - Start async restore from R2 backup
 
 ### Simplified Progress Tracking
+
 Progress tracking has been simplified to use HTTP polling instead of WebSockets:
 
 - **Polling-Only Approach** - Removed WebSocket complexity for more reliable progress tracking
@@ -67,11 +74,13 @@ Progress tracking has been simplified to use HTTP polling instead of WebSockets:
 - **No Connection Issues** - Eliminates WebSocket connection failures and rate limiting
 
 **Migration Required:**
+
 - Database migration needed for existing installations (see the [Migration Guide](https://github.com/neverinfamous/kv-manager/wiki/Migration-Guide))
 - Single migration file adds: `job_audit_events` table and progress tracking columns
 - Idempotent and safe to run multiple times
 
 ### Advanced Job History Filters
+
 The Job History UI now includes enterprise-grade filtering and sorting capabilities:
 
 - **Namespace Filter** - Filter jobs by specific namespace
@@ -84,6 +93,7 @@ The Job History UI now includes enterprise-grade filtering and sorting capabilit
 - **Combinable Filters** - Use multiple filters simultaneously for precise results
 
 **Technical Details:**
+
 - 7 new query parameters added to `GET /api/jobs` endpoint
 - SQL injection prevention with whitelist validation
 - Debounced search input (500ms) for optimal performance
@@ -93,6 +103,7 @@ The Job History UI now includes enterprise-grade filtering and sorting capabilit
 ## ✨ Key Features
 
 ### Namespace Management
+
 - Create, delete, and rename KV namespaces
 - Browse namespaces with key counts and metadata
 - Export entire namespaces to JSON or NDJSON format
@@ -100,6 +111,7 @@ The Job History UI now includes enterprise-grade filtering and sorting capabilit
 - Namespace-level audit logging
 
 ### Key Operations
+
 - List keys with cursor-based pagination
 - Create, update, and delete individual keys
 - Full CRUD operations with dual metadata support
@@ -109,6 +121,7 @@ The Job History UI now includes enterprise-grade filtering and sorting capabilit
 - Single-version backup and restore
 
 ### Metadata & Tags
+
 - **KV Native Metadata** - Store up to 1024 bytes of JSON metadata directly in Cloudflare KV (retrieved with key value)
 - **D1 Custom Metadata** - Store unlimited JSON metadata in D1 database (searchable, no size limit)
 - **Tags (D1-Backed)** - Add unlimited tags to keys for organization and filtering
@@ -117,6 +130,7 @@ The Job History UI now includes enterprise-grade filtering and sorting capabilit
 - Two separate metadata systems for different use cases
 
 ### Search & Discovery
+
 - Cross-namespace search by key name
 - Filter by specific namespaces
 - Filter by tags (multiple tag support)
@@ -124,6 +138,7 @@ The Job History UI now includes enterprise-grade filtering and sorting capabilit
 - Quick navigation to search results
 
 ### Bulk Operations
+
 - **Bulk Delete**: Remove multiple keys at once
 - **Bulk Copy**: Copy keys between namespaces
 - **Bulk TTL Update**: Set expiration on multiple keys
@@ -135,6 +150,7 @@ The Job History UI now includes enterprise-grade filtering and sorting capabilit
 - Batch processing (10,000 keys per operation)
 
 ### Import/Export
+
 - Export namespaces in JSON or NDJSON format
 - Auto-detect format on import
 - **Dual Metadata Support**: Import with both `metadata` (KV native) and `custom_metadata` (D1) fields
@@ -146,6 +162,7 @@ The Job History UI now includes enterprise-grade filtering and sorting capabilit
 - Download exported data as files with automatic download trigger
 
 ### Audit Logging
+
 - Track all operations with user attribution
 - Filter by namespace or user
 - Filter by operation type
@@ -154,6 +171,7 @@ The Job History UI now includes enterprise-grade filtering and sorting capabilit
 - Comprehensive operation tracking
 
 ### User Interface
+
 - **Dark/Light Theme**: System, light, and dark theme support
 - **Navigation**: Switch between Namespaces, Search, and Audit Log views
 - **Responsive Design**: Works on desktop and mobile

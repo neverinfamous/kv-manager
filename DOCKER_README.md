@@ -1,6 +1,6 @@
 # KV Manager - Docker Edition
 
-Last Updated January 25, 2026 - Production/Stable Version 2.2.0 
+**Last Updated January 27, 2026**
 
 [![GitHub](https://img.shields.io/badge/GitHub-neverinfamous/kv--manager-blue?logo=github)](https://github.com/neverinfamous/kv-manager)
 [![Docker Pulls](https://img.shields.io/docker/pulls/writenotenow/kv-manager)](https://hub.docker.com/r/writenotenow/kv-manager)
@@ -17,7 +17,7 @@ A full-featured management platform for Cloudflare Workers KV, designed for engi
 
 ## Tech Stack
 
-**Frontend**: React 19.2.3 | TypeScript 5.9.3 | Vite 7.3.1 | Tailwind CSS 4.1.17 | shadcn/ui
+**Frontend**: React 19.2.4 | TypeScript 5.9.3 | Vite 7.3.1 | Tailwind CSS 4.1.17 | shadcn/ui
 
 **Backend**: Cloudflare Workers + KV + D1 + R2 + Durable Objects + Zero Trust
 
@@ -62,16 +62,17 @@ Access at: http://localhost:8787
 
 ### Required Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `ACCOUNT_ID` | Cloudflare Account ID |
-| `API_KEY` | API Token (KV + D1 Edit permissions) |
+| Variable      | Description                             |
+| ------------- | --------------------------------------- |
+| `ACCOUNT_ID`  | Cloudflare Account ID                   |
+| `API_KEY`     | API Token (KV + D1 Edit permissions)    |
 | `TEAM_DOMAIN` | `https://yourteam.cloudflareaccess.com` |
-| `POLICY_AUD` | Cloudflare Access AUD tag |
+| `POLICY_AUD`  | Cloudflare Access AUD tag               |
 
 ### Setup Steps
 
 1. **Create D1 database:**
+
    ```bash
    npx wrangler d1 create kv-manager-metadata
    npx wrangler d1 execute kv-manager-metadata --remote --file=worker/schema.sql
@@ -87,20 +88,22 @@ Access at: http://localhost:8787
 ## 🐞 Troubleshooting
 
 **View logs:**
+
 ```bash
 docker logs kv-manager
 ```
 
 **Common issues:**
 
-| Issue | Solution |
-|-------|----------|
-| Container won't start | Check env vars: `docker inspect kv-manager` |
-| Auth failures | Verify `TEAM_DOMAIN` includes `https://` |
-| KV operations fail | Confirm API token has KV + D1 Edit permissions |
-| Port conflict | Use different port: `-p 3000:8787` |
+| Issue                 | Solution                                       |
+| --------------------- | ---------------------------------------------- |
+| Container won't start | Check env vars: `docker inspect kv-manager`    |
+| Auth failures         | Verify `TEAM_DOMAIN` includes `https://`       |
+| KV operations fail    | Confirm API token has KV + D1 Edit permissions |
+| Port conflict         | Use different port: `-p 3000:8787`             |
 
 **Health check:**
+
 ```bash
 curl http://localhost:8787/health
 ```
@@ -110,12 +113,14 @@ curl http://localhost:8787/health
 ## 🔄 Updates
 
 **Pull and restart:**
+
 ```bash
 docker pull writenotenow/kv-manager:latest
 docker compose up -d  # or docker stop/rm/run
 ```
 
 **Pin version (recommended for production):**
+
 ```yaml
 services:
   kv-manager:
@@ -151,4 +156,3 @@ MIT License - see [LICENSE](https://github.com/neverinfamous/kv-manager/blob/mai
 ---
 
 **Made with ❤️ for the Cloudflare and Docker communities**
-

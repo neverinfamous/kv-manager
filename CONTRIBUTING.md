@@ -115,6 +115,7 @@ npx wrangler dev --config wrangler.dev.toml --local  # Worker API (Terminal 2)
 ```
 
 Test all major features:
+
 - Namespace listing and creation
 - Key browsing and editing
 - Bulk operations
@@ -169,6 +170,7 @@ Look for issues labeled `good first issue` - these are great for newcomers!
 ## 🌟 Recognition
 
 Contributors are recognized in:
+
 - GitHub's automatic contributors list
 - Release notes for significant contributions
 - Our gratitude and appreciation!
@@ -190,4 +192,3 @@ Every contribution, no matter how small, makes KV Manager better for everyone. T
 ---
 
 **Made with ❤️ for the Cloudflare community**
-

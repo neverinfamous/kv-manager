@@ -1,8 +1,8 @@
-import { authLogger } from '../lib/logger'
+import { authLogger } from "../lib/logger";
 
 /**
  * AuthService - Minimal implementation for Cloudflare Zero Trust
- * 
+ *
  * Authentication is now handled by Cloudflare Access at the edge.
  * This service provides minimal functionality for logout only.
  */
@@ -15,22 +15,21 @@ class AuthService {
       // Clear any local storage/session storage first
       localStorage.clear();
       sessionStorage.clear();
-      
+
       // For Cloudflare Access logout, we need to use a simple navigation
       // instead of fetch() to avoid CORS preflight issues.
       // The /cdn-cgi/access/logout endpoint doesn't support CORS preflight requests.
-      
+
       // Direct navigation to logout endpoint - Cloudflare Access will handle the logout
       // and redirect back to the login page
-      window.location.replace('/cdn-cgi/access/logout');
-      
+      window.location.replace("/cdn-cgi/access/logout");
     } catch (error) {
-      authLogger.error('Logout failed', error);
+      authLogger.error("Logout failed", error);
       // Clear storage and force redirect anyway
       localStorage.clear();
       sessionStorage.clear();
       // Fallback: just redirect to home which will trigger re-authentication
-      window.location.replace('/');
+      window.location.replace("/");
     }
   }
 
@@ -48,8 +47,7 @@ class AuthService {
   }
 }
 
-export const auth = new AuthService()
+export const auth = new AuthService();
 
 // Initialize auth service
-auth.initialize()
-
+auth.initialize();

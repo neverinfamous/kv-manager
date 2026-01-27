@@ -1,17 +1,48 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Calendar } from './ui/calendar';
-import { api, type JobListItem, type KVNamespace } from '../services/api';
-import { Loader2, CheckCircle2, XCircle, AlertCircle, FileText, Download, Upload, Copy, Clock, Tag, Trash2, Search, Calendar as CalendarIcon, ArrowUp, ArrowDown, X, Database, RefreshCw } from 'lucide-react';
-import { JobHistoryDialog } from './JobHistoryDialog';
-import { format } from 'date-fns';
-import { logger } from '../lib/logger';
+import React, { useState, useEffect } from "react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Calendar } from "./ui/calendar";
+import { api, type JobListItem, type KVNamespace } from "../services/api";
+import {
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  FileText,
+  Download,
+  Upload,
+  Copy,
+  Clock,
+  Tag,
+  Trash2,
+  Search,
+  Calendar as CalendarIcon,
+  ArrowUp,
+  ArrowDown,
+  X,
+  Database,
+  RefreshCw,
+} from "lucide-react";
+import { JobHistoryDialog } from "./JobHistoryDialog";
+import { format } from "date-fns";
+import { logger } from "../lib/logger";
 
 interface JobHistoryProps {
   namespaces: KVNamespace[];
@@ -20,17 +51,20 @@ interface JobHistoryProps {
 export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
   const [jobs, setJobs] = useState<JobListItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [operationFilter, setOperationFilter] = useState<string>('all');
-  const [namespaceFilter, setNamespaceFilter] = useState<string>('all');
-  const [datePreset, setDatePreset] = useState<string>('all');
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({ from: undefined, to: undefined });
-  const [jobIdSearch, setJobIdSearch] = useState<string>('');
-  const [jobIdInput, setJobIdInput] = useState<string>('');
-  const [minErrors, setMinErrors] = useState<string>('');
-  const [sortBy, setSortBy] = useState<string>('started_at');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [error, setError] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [operationFilter, setOperationFilter] = useState<string>("all");
+  const [namespaceFilter, setNamespaceFilter] = useState<string>("all");
+  const [datePreset, setDatePreset] = useState<string>("all");
+  const [dateRange, setDateRange] = useState<{
+    from: Date | undefined;
+    to: Date | undefined;
+  }>({ from: undefined, to: undefined });
+  const [jobIdSearch, setJobIdSearch] = useState<string>("");
+  const [jobIdInput, setJobIdInput] = useState<string>("");
+  const [minErrors, setMinErrors] = useState<string>("");
+  const [sortBy, setSortBy] = useState<string>("started_at");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [offset, setOffset] = useState(0);
   const [total, setTotal] = useState(0);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -47,7 +81,7 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
   const loadJobs = async (reset = false): Promise<void> => {
     try {
       setLoading(true);
-      setError('');
+      setError("");
 
       const currentOffset = reset ? 0 : offset;
       const options: {
@@ -61,37 +95,37 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
         job_id?: string;
         min_errors?: number;
         sort_by?: string;
-        sort_order?: 'asc' | 'desc';
+        sort_order?: "asc" | "desc";
       } = {
         limit,
         offset: currentOffset,
       };
 
-      if (statusFilter !== 'all') {
+      if (statusFilter !== "all") {
         options.status = statusFilter;
       }
 
-      if (operationFilter !== 'all') {
+      if (operationFilter !== "all") {
         options.operation_type = operationFilter;
       }
 
-      if (namespaceFilter !== 'all') {
+      if (namespaceFilter !== "all") {
         options.namespace_id = namespaceFilter;
       }
 
       // Handle date range based on preset or custom selection
-      if (datePreset !== 'all' && datePreset !== 'custom') {
+      if (datePreset !== "all" && datePreset !== "custom") {
         const now = new Date();
         let startDate: Date;
 
         switch (datePreset) {
-          case '24h':
+          case "24h":
             startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
             break;
-          case '7d':
+          case "7d":
             startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
             break;
-          case '30d':
+          case "30d":
             startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
             break;
           default:
@@ -99,7 +133,7 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
         }
 
         options.start_date = startDate.toISOString();
-      } else if (datePreset === 'custom') {
+      } else if (datePreset === "custom") {
         if (dateRange.from) {
           options.start_date = dateRange.from.toISOString();
         }
@@ -134,8 +168,10 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
 
       setTotal(data.total);
     } catch (err) {
-      logger.error('Failed to load job history', err);
-      setError(err instanceof Error ? err.message : 'Failed to load job history');
+      logger.error("Failed to load job history", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to load job history",
+      );
     } finally {
       setLoading(false);
     }
@@ -144,54 +180,65 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
   useEffect(() => {
     loadJobs(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, operationFilter, namespaceFilter, datePreset, dateRange.from, dateRange.to, jobIdSearch, minErrors, sortBy, sortOrder]);
+  }, [
+    statusFilter,
+    operationFilter,
+    namespaceFilter,
+    datePreset,
+    dateRange.from,
+    dateRange.to,
+    jobIdSearch,
+    minErrors,
+    sortBy,
+    sortOrder,
+  ]);
 
   const handleLoadMore = (): void => {
     loadJobs(false);
   };
 
   const handleResetFilters = (): void => {
-    setStatusFilter('all');
-    setOperationFilter('all');
-    setNamespaceFilter('all');
-    setDatePreset('all');
+    setStatusFilter("all");
+    setOperationFilter("all");
+    setNamespaceFilter("all");
+    setDatePreset("all");
     setDateRange({ from: undefined, to: undefined });
-    setJobIdInput('');
-    setJobIdSearch('');
-    setMinErrors('');
-    setSortBy('started_at');
-    setSortOrder('desc');
+    setJobIdInput("");
+    setJobIdSearch("");
+    setMinErrors("");
+    setSortBy("started_at");
+    setSortOrder("desc");
   };
 
   const handleDatePresetChange = (value: string): void => {
     setDatePreset(value);
-    if (value !== 'custom') {
+    if (value !== "custom") {
       setDateRange({ from: undefined, to: undefined });
     }
   };
 
   const toggleSortOrder = (): void => {
-    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    setSortOrder(sortOrder === "asc" ? "desc" : "asc");
   };
 
   const getDateRangeDisplay = (): string => {
-    if (datePreset === 'all') return 'All Time';
-    if (datePreset === '24h') return 'Last 24 Hours';
-    if (datePreset === '7d') return 'Last 7 Days';
-    if (datePreset === '30d') return 'Last 30 Days';
-    if (datePreset === 'custom') {
+    if (datePreset === "all") return "All Time";
+    if (datePreset === "24h") return "Last 24 Hours";
+    if (datePreset === "7d") return "Last 7 Days";
+    if (datePreset === "30d") return "Last 30 Days";
+    if (datePreset === "custom") {
       if (dateRange.from && dateRange.to) {
-        return `${format(dateRange.from, 'MMM d, yyyy')} - ${format(dateRange.to, 'MMM d, yyyy')}`;
+        return `${format(dateRange.from, "MMM d, yyyy")} - ${format(dateRange.to, "MMM d, yyyy")}`;
       }
       if (dateRange.from) {
-        return `From ${format(dateRange.from, 'MMM d, yyyy')}`;
+        return `From ${format(dateRange.from, "MMM d, yyyy")}`;
       }
       if (dateRange.to) {
-        return `Until ${format(dateRange.to, 'MMM d, yyyy')}`;
+        return `Until ${format(dateRange.to, "MMM d, yyyy")}`;
       }
-      return 'Select dates...';
+      return "Select dates...";
     }
-    return 'All Time';
+    return "All Time";
   };
 
   const formatTimestamp = (timestamp: string): string => {
@@ -202,38 +249,38 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'just now';
+    if (diffMins < 1) return "just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
 
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    return date.toLocaleDateString() + " " + date.toLocaleTimeString();
   };
 
   const getStatusBadge = (status: string): React.JSX.Element => {
     switch (status) {
-      case 'completed':
+      case "completed":
         return (
           <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
             <CheckCircle2 className="h-3 w-3 mr-1" />
             Completed
           </Badge>
         );
-      case 'failed':
+      case "failed":
         return (
           <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
             <XCircle className="h-3 w-3 mr-1" />
             Failed
           </Badge>
         );
-      case 'running':
+      case "running":
         return (
           <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
             Running
           </Badge>
         );
-      case 'queued':
+      case "queued":
         return (
           <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
             <AlertCircle className="h-3 w-3 mr-1" />
@@ -247,21 +294,21 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
 
   const getOperationIcon = (operationType: string): React.JSX.Element => {
     switch (operationType) {
-      case 'export':
+      case "export":
         return <Download className="h-4 w-4" />;
-      case 'import':
+      case "import":
         return <Upload className="h-4 w-4" />;
-      case 'bulk_copy':
+      case "bulk_copy":
         return <Copy className="h-4 w-4" />;
-      case 'bulk_delete':
+      case "bulk_delete":
         return <Trash2 className="h-4 w-4" />;
-      case 'bulk_ttl_update':
+      case "bulk_ttl_update":
         return <Clock className="h-4 w-4" />;
-      case 'bulk_tag':
+      case "bulk_tag":
         return <Tag className="h-4 w-4" />;
-      case 'r2_backup':
+      case "r2_backup":
         return <Database className="h-4 w-4" />;
-      case 'r2_restore':
+      case "r2_restore":
         return <RefreshCw className="h-4 w-4" />;
       default:
         return <FileText className="h-4 w-4" />;
@@ -270,22 +317,22 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
 
   const getOperationLabel = (operationType: string): string => {
     switch (operationType) {
-      case 'export':
-        return 'Export';
-      case 'import':
-        return 'Import';
-      case 'bulk_copy':
-        return 'Bulk Copy';
-      case 'bulk_delete':
-        return 'Bulk Delete';
-      case 'bulk_ttl_update':
-        return 'Bulk TTL Update';
-      case 'bulk_tag':
-        return 'Bulk Tag';
-      case 'r2_backup':
-        return 'R2 Backup';
-      case 'r2_restore':
-        return 'R2 Restore';
+      case "export":
+        return "Export";
+      case "import":
+        return "Import";
+      case "bulk_copy":
+        return "Bulk Copy";
+      case "bulk_delete":
+        return "Bulk Delete";
+      case "bulk_ttl_update":
+        return "Bulk TTL Update";
+      case "bulk_tag":
+        return "Bulk Tag";
+      case "r2_backup":
+        return "R2 Backup";
+      case "r2_restore":
+        return "R2 Restore";
       default:
         return operationType;
     }
@@ -332,7 +379,10 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
 
             {/* Operation Type Filter */}
             <div className="space-y-2">
-              <Select value={operationFilter} onValueChange={setOperationFilter}>
+              <Select
+                value={operationFilter}
+                onValueChange={setOperationFilter}
+              >
                 <SelectTrigger aria-label="Operation type filter">
                   <SelectValue placeholder="Operation: All" />
                 </SelectTrigger>
@@ -342,7 +392,9 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
                   <SelectItem value="import">Import</SelectItem>
                   <SelectItem value="bulk_copy">Bulk Copy</SelectItem>
                   <SelectItem value="bulk_delete">Bulk Delete</SelectItem>
-                  <SelectItem value="bulk_ttl_update">Bulk TTL Update</SelectItem>
+                  <SelectItem value="bulk_ttl_update">
+                    Bulk TTL Update
+                  </SelectItem>
                   <SelectItem value="bulk_tag">Bulk Tag</SelectItem>
                   <SelectItem value="r2_backup">R2 Backup</SelectItem>
                   <SelectItem value="r2_restore">R2 Restore</SelectItem>
@@ -352,7 +404,10 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
 
             {/* Namespace Filter */}
             <div className="space-y-2">
-              <Select value={namespaceFilter} onValueChange={setNamespaceFilter}>
+              <Select
+                value={namespaceFilter}
+                onValueChange={setNamespaceFilter}
+              >
                 <SelectTrigger aria-label="Namespace filter">
                   <SelectValue placeholder="Namespace: All" />
                 </SelectTrigger>
@@ -373,8 +428,14 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
             {/* Date Range Filter */}
             <div className="space-y-2">
               <div className="flex gap-2">
-                <Select value={datePreset} onValueChange={handleDatePresetChange}>
-                  <SelectTrigger className="flex-1" aria-label="Date range filter">
+                <Select
+                  value={datePreset}
+                  onValueChange={handleDatePresetChange}
+                >
+                  <SelectTrigger
+                    className="flex-1"
+                    aria-label="Date range filter"
+                  >
                     <SelectValue placeholder="Date: All Time" />
                   </SelectTrigger>
                   <SelectContent>
@@ -385,21 +446,30 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
                     <SelectItem value="custom">Custom Range</SelectItem>
                   </SelectContent>
                 </Select>
-                {datePreset === 'custom' && (
+                {datePreset === "custom" && (
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" className="w-[240px] justify-start text-left font-normal">
+                      <Button
+                        variant="outline"
+                        className="w-[240px] justify-start text-left font-normal"
+                      >
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        <span className="truncate">{getDateRangeDisplay()}</span>
+                        <span className="truncate">
+                          {getDateRangeDisplay()}
+                        </span>
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="range"
                         selected={dateRange}
-                        onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
+                        onSelect={(range) =>
+                          setDateRange({ from: range?.from, to: range?.to })
+                        }
                         numberOfMonths={2}
-                        {...(dateRange.from ? { defaultMonth: dateRange.from } : {})}
+                        {...(dateRange.from
+                          ? { defaultMonth: dateRange.from }
+                          : {})}
                       />
                     </PopoverContent>
                   </Popover>
@@ -464,7 +534,7 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
                 className="w-full justify-start"
                 aria-label="Toggle sort order"
               >
-                {sortOrder === 'desc' ? (
+                {sortOrder === "desc" ? (
                   <>
                     <ArrowDown className="mr-2 h-4 w-4" />
                     Descending
@@ -548,25 +618,38 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
                     <div className="text-muted-foreground text-xs">Started</div>
-                    <div className="font-medium" title={new Date(job.started_at).toLocaleString()}>
+                    <div
+                      className="font-medium"
+                      title={new Date(job.started_at).toLocaleString()}
+                    >
                       {formatTimestamp(job.started_at)}
                     </div>
                   </div>
                   {job.total_keys !== null && (
                     <div>
-                      <div className="text-muted-foreground text-xs">Total Keys</div>
-                      <div className="font-medium">{job.total_keys.toLocaleString()}</div>
+                      <div className="text-muted-foreground text-xs">
+                        Total Keys
+                      </div>
+                      <div className="font-medium">
+                        {job.total_keys.toLocaleString()}
+                      </div>
                     </div>
                   )}
                   {job.processed_keys !== null && (
                     <div>
-                      <div className="text-muted-foreground text-xs">Processed</div>
-                      <div className="font-medium">{job.processed_keys.toLocaleString()}</div>
+                      <div className="text-muted-foreground text-xs">
+                        Processed
+                      </div>
+                      <div className="font-medium">
+                        {job.processed_keys.toLocaleString()}
+                      </div>
                     </div>
                   )}
                   {job.error_count !== null && job.error_count > 0 && (
                     <div>
-                      <div className="text-muted-foreground text-xs">Errors</div>
+                      <div className="text-muted-foreground text-xs">
+                        Errors
+                      </div>
                       <div className="font-medium text-red-600 dark:text-red-400">
                         {job.error_count.toLocaleString()}
                       </div>
@@ -583,7 +666,11 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
           {/* Load More Button */}
           {hasMore && (
             <div className="flex justify-center pt-4">
-              <Button onClick={handleLoadMore} variant="outline" disabled={loading}>
+              <Button
+                onClick={handleLoadMore}
+                variant="outline"
+                disabled={loading}
+              >
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -609,4 +696,3 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
     </div>
   );
 }
-

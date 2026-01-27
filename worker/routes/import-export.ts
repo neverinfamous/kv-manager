@@ -1,6 +1,6 @@
-import type { Env, APIResponse } from '../types';
-import { getD1Binding } from '../utils/helpers';
-import { logInfo, logError, createErrorContext } from '../utils/error-logger';
+import type { Env, APIResponse } from "../types";
+import { getD1Binding } from "../utils/helpers";
+import { logInfo, logError, createErrorContext } from "../utils/error-logger";
 
 export async function handleImportExportRoutes(
   request: Request,
@@ -8,21 +8,24 @@ export async function handleImportExportRoutes(
   url: URL,
   corsHeaders: HeadersInit,
   isLocalDev: boolean,
-  userEmail: string
+  userEmail: string,
 ): Promise<Response> {
   const db = getD1Binding(env);
 
   try {
     // GET /api/export/:namespaceId - Export namespace
     const exportMatch = url.pathname.match(/^\/api\/export\/([^/]+)$/);
-    if (exportMatch && request.method === 'GET') {
+    if (exportMatch && request.method === "GET") {
       const namespaceId = exportMatch[1];
-      const format = url.searchParams.get('format') || 'json';
+      const format = url.searchParams.get("format") || "json";
 
-      logInfo('Exporting namespace', createErrorContext('export', 'start_export', {
-        ...(namespaceId && { namespaceId }),
-        metadata: { format }
-      }));
+      logInfo(
+        "Exporting namespace",
+        createErrorContext("export", "start_export", {
+          ...(namespaceId && { namespaceId }),
+          metadata: { format },
+        }),
+      );
 
       if (isLocalDev) {
         const jobId = `export-${Date.now()}`;
@@ -30,13 +33,13 @@ export async function handleImportExportRoutes(
           success: true,
           result: {
             job_id: jobId,
-            status: 'queued',
-            ws_url: `/api/jobs/${jobId}/ws`
-          }
+            status: "queued",
+            ws_url: `/api/jobs/${jobId}/ws`,
+          },
         };
 
         return new Response(JSON.stringify(response), {
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
 
@@ -45,10 +48,15 @@ export async function handleImportExportRoutes(
 
       // Create job entry in D1
       if (db) {
-        await db.prepare(`
+        await db
+          .prepare(
+            `
           INSERT INTO bulk_jobs (job_id, namespace_id, operation_type, status, started_at, user_email)
           VALUES (?, ?, 'export', 'queued', CURRENT_TIMESTAMP, ?)
-        `).bind(jobId, namespaceId, userEmail).run();
+        `,
+          )
+          .bind(jobId, namespaceId, userEmail)
+          .run();
       }
 
       // Get Durable Object stub and start async processing
@@ -57,73 +65,92 @@ export async function handleImportExportRoutes(
 
       // Fire and forget - start processing in DO
       const doRequest = new Request(`https://do/process/export`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jobId,
           namespaceId,
-          format: format as 'json' | 'ndjson',
-          userEmail
-        })
+          format: format as "json" | "ndjson",
+          userEmail,
+        }),
       });
 
-      logInfo('Starting async processing in DO for job', createErrorContext('export', 'start_export', {
-        metadata: { jobId }
-      }));
+      logInfo(
+        "Starting async processing in DO for job",
+        createErrorContext("export", "start_export", {
+          metadata: { jobId },
+        }),
+      );
 
       // Start processing - await to ensure the request is actually sent
       const doResponse = await stub.fetch(doRequest);
-      logInfo('DO processing initiated', createErrorContext('export', 'start_export', {
-        metadata: { jobId, responseStatus: doResponse.status }
-      }));
+      logInfo(
+        "DO processing initiated",
+        createErrorContext("export", "start_export", {
+          metadata: { jobId, responseStatus: doResponse.status },
+        }),
+      );
 
       // Return immediately with job info
       const response: APIResponse = {
         success: true,
         result: {
           job_id: jobId,
-          status: 'queued',
-          ws_url: `/api/jobs/${jobId}/ws`
-        }
+          status: "queued",
+          ws_url: `/api/jobs/${jobId}/ws`,
+        },
       };
 
       return new Response(JSON.stringify(response), {
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
     // POST /api/import/:namespaceId - Import keys
     const importMatch = url.pathname.match(/^\/api\/import\/([^/]+)$/);
-    if (importMatch && request.method === 'POST') {
+    if (importMatch && request.method === "POST") {
       const namespaceId = importMatch[1];
       const body = await request.text();
-      const collisionHandling = url.searchParams.get('collision') || 'overwrite';
+      const collisionHandling =
+        url.searchParams.get("collision") || "overwrite";
 
-      logInfo('Importing to namespace', createErrorContext('import', 'start_import', {
-        ...(namespaceId && { namespaceId }),
-        metadata: { collisionHandling }
-      }));
+      logInfo(
+        "Importing to namespace",
+        createErrorContext("import", "start_import", {
+          ...(namespaceId && { namespaceId }),
+          metadata: { collisionHandling },
+        }),
+      );
 
       // Parse import data (auto-detect JSON vs NDJSON)
-      let importData: { name: string; value: string; metadata?: Record<string, unknown>; expiration_ttl?: number }[];
+      let importData: {
+        name: string;
+        value: string;
+        metadata?: Record<string, unknown>;
+        expiration_ttl?: number;
+      }[];
 
       try {
         // Try JSON array first
         importData = JSON.parse(body);
         if (!Array.isArray(importData)) {
-          throw new Error('Expected array');
+          throw new Error("Expected array");
         }
       } catch {
         // Try NDJSON
-        importData = body.split('\n')
-          .filter(line => line.trim())
-          .map(line => JSON.parse(line));
+        importData = body
+          .split("\n")
+          .filter((line) => line.trim())
+          .map((line) => JSON.parse(line));
       }
 
-      logInfo(`Parsed ${importData.length} items`, createErrorContext('import', 'start_import', {
-        ...(namespaceId && { namespaceId }),
-        metadata: { itemCount: importData.length }
-      }));
+      logInfo(
+        `Parsed ${importData.length} items`,
+        createErrorContext("import", "start_import", {
+          ...(namespaceId && { namespaceId }),
+          metadata: { itemCount: importData.length },
+        }),
+      );
 
       if (isLocalDev) {
         const jobId = `import-${Date.now()}`;
@@ -131,13 +158,13 @@ export async function handleImportExportRoutes(
           success: true,
           result: {
             job_id: jobId,
-            status: 'queued',
-            ws_url: `/api/jobs/${jobId}/ws`
-          }
+            status: "queued",
+            ws_url: `/api/jobs/${jobId}/ws`,
+          },
         };
 
         return new Response(JSON.stringify(response), {
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
 
@@ -146,10 +173,15 @@ export async function handleImportExportRoutes(
 
       // Create job entry
       if (db) {
-        await db.prepare(`
+        await db
+          .prepare(
+            `
           INSERT INTO bulk_jobs (job_id, namespace_id, operation_type, status, total_keys, started_at, user_email)
           VALUES (?, ?, 'import', 'queued', ?, CURRENT_TIMESTAMP, ?)
-        `).bind(jobId, namespaceId, importData.length, userEmail).run();
+        `,
+          )
+          .bind(jobId, namespaceId, importData.length, userEmail)
+          .run();
       }
 
       // Get Durable Object stub and start async processing
@@ -158,60 +190,69 @@ export async function handleImportExportRoutes(
 
       // Start processing in DO
       const doRequest = new Request(`https://do/process/import`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jobId,
           namespaceId,
           importData,
-          collision: collisionHandling as 'skip' | 'overwrite' | 'fail',
-          userEmail
-        })
+          collision: collisionHandling as "skip" | "overwrite" | "fail",
+          userEmail,
+        }),
       });
 
-      logInfo('Starting async processing in DO for job', createErrorContext('import', 'start_import', {
-        metadata: { jobId }
-      }));
+      logInfo(
+        "Starting async processing in DO for job",
+        createErrorContext("import", "start_import", {
+          metadata: { jobId },
+        }),
+      );
 
       // Await to ensure the request is actually sent
       const doResponse = await stub.fetch(doRequest);
-      logInfo('DO processing initiated', createErrorContext('import', 'start_import', {
-        metadata: { jobId, responseStatus: doResponse.status }
-      }));
+      logInfo(
+        "DO processing initiated",
+        createErrorContext("import", "start_import", {
+          metadata: { jobId, responseStatus: doResponse.status },
+        }),
+      );
 
       // Return immediately with job info
       const response: APIResponse = {
         success: true,
         result: {
           job_id: jobId,
-          status: 'queued',
+          status: "queued",
           ws_url: `/api/jobs/${jobId}/ws`,
-          total_keys: importData.length
-        }
+          total_keys: importData.length,
+        },
       };
 
       return new Response(JSON.stringify(response), {
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
     // GET /api/jobs - Get list of user's jobs
-    if (url.pathname === '/api/jobs' && request.method === 'GET') {
-      logInfo('Getting job list for user', createErrorContext('jobs', 'list_jobs', {
-        userId: userEmail
-      }));
+    if (url.pathname === "/api/jobs" && request.method === "GET") {
+      logInfo(
+        "Getting job list for user",
+        createErrorContext("jobs", "list_jobs", {
+          userId: userEmail,
+        }),
+      );
 
-      const limit = parseInt(url.searchParams.get('limit') || '50');
-      const offset = parseInt(url.searchParams.get('offset') || '0');
-      const status = url.searchParams.get('status');
-      const operationType = url.searchParams.get('operation_type');
-      const namespaceId = url.searchParams.get('namespace_id');
-      const startDate = url.searchParams.get('start_date');
-      const endDate = url.searchParams.get('end_date');
-      const jobId = url.searchParams.get('job_id');
-      const minErrors = url.searchParams.get('min_errors');
-      const sortBy = url.searchParams.get('sort_by') || 'started_at';
-      const sortOrder = url.searchParams.get('sort_order') || 'desc';
+      const limit = parseInt(url.searchParams.get("limit") || "50");
+      const offset = parseInt(url.searchParams.get("offset") || "0");
+      const status = url.searchParams.get("status");
+      const operationType = url.searchParams.get("operation_type");
+      const namespaceId = url.searchParams.get("namespace_id");
+      const startDate = url.searchParams.get("start_date");
+      const endDate = url.searchParams.get("end_date");
+      const jobId = url.searchParams.get("job_id");
+      const minErrors = url.searchParams.get("min_errors");
+      const sortBy = url.searchParams.get("sort_by") || "started_at";
+      const sortOrder = url.searchParams.get("sort_order") || "desc";
 
       if (isLocalDev || !db) {
         // Return mock jobs for local dev with varied data
@@ -220,165 +261,180 @@ export async function handleImportExportRoutes(
           result: {
             jobs: [
               {
-                job_id: 'export-123-abc',
-                namespace_id: 'test-namespace-1',
-                operation_type: 'export',
-                status: 'completed',
+                job_id: "export-123-abc",
+                namespace_id: "test-namespace-1",
+                operation_type: "export",
+                status: "completed",
                 total_keys: 1000,
                 processed_keys: 1000,
                 error_count: 0,
                 percentage: 100,
                 started_at: new Date(Date.now() - 3600000).toISOString(),
                 completed_at: new Date().toISOString(),
-                user_email: 'dev@localhost'
+                user_email: "dev@localhost",
               },
               {
-                job_id: 'import-456-def',
-                namespace_id: 'test-namespace-2',
-                operation_type: 'import',
-                status: 'failed',
+                job_id: "import-456-def",
+                namespace_id: "test-namespace-2",
+                operation_type: "import",
+                status: "failed",
                 total_keys: 500,
                 processed_keys: 250,
                 error_count: 10,
                 percentage: 50,
                 started_at: new Date(Date.now() - 7200000).toISOString(),
                 completed_at: new Date(Date.now() - 7000000).toISOString(),
-                user_email: 'dev@localhost'
+                user_email: "dev@localhost",
               },
               {
-                job_id: 'bulk-copy-789-ghi',
-                namespace_id: 'test-namespace-1',
-                operation_type: 'bulk_copy',
-                status: 'completed',
+                job_id: "bulk-copy-789-ghi",
+                namespace_id: "test-namespace-1",
+                operation_type: "bulk_copy",
+                status: "completed",
                 total_keys: 2500,
                 processed_keys: 2500,
                 error_count: 5,
                 percentage: 100,
                 started_at: new Date(Date.now() - 86400000).toISOString(),
                 completed_at: new Date(Date.now() - 86300000).toISOString(),
-                user_email: 'dev@localhost'
+                user_email: "dev@localhost",
               },
               {
-                job_id: 'bulk-delete-999-jkl',
-                namespace_id: 'test-namespace-3',
-                operation_type: 'bulk_delete',
-                status: 'completed',
+                job_id: "bulk-delete-999-jkl",
+                namespace_id: "test-namespace-3",
+                operation_type: "bulk_delete",
+                status: "completed",
                 total_keys: 150,
                 processed_keys: 150,
                 error_count: 0,
                 percentage: 100,
                 started_at: new Date(Date.now() - 172800000).toISOString(),
                 completed_at: new Date(Date.now() - 172700000).toISOString(),
-                user_email: 'dev@localhost'
-              }
+                user_email: "dev@localhost",
+              },
             ],
             total: 4,
             limit,
-            offset
-          }
+            offset,
+          },
         };
 
         return new Response(JSON.stringify(response), {
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
 
       // Build query with filters
-      let query = 'SELECT * FROM bulk_jobs WHERE user_email = ?';
+      let query = "SELECT * FROM bulk_jobs WHERE user_email = ?";
       const bindings: (string | number)[] = [userEmail];
 
       if (status) {
-        query += ' AND status = ?';
+        query += " AND status = ?";
         bindings.push(status);
       }
 
       if (operationType) {
-        query += ' AND operation_type = ?';
+        query += " AND operation_type = ?";
         bindings.push(operationType);
       }
 
       if (namespaceId) {
-        query += ' AND namespace_id = ?';
+        query += " AND namespace_id = ?";
         bindings.push(namespaceId);
       }
 
       if (startDate) {
-        query += ' AND started_at >= ?';
+        query += " AND started_at >= ?";
         bindings.push(startDate);
       }
 
       if (endDate) {
-        query += ' AND started_at <= ?';
+        query += " AND started_at <= ?";
         bindings.push(endDate);
       }
 
       if (jobId) {
-        query += ' AND job_id LIKE ?';
+        query += " AND job_id LIKE ?";
         bindings.push(`%${jobId}%`);
       }
 
       if (minErrors) {
         const minErrorsNum = parseInt(minErrors);
         if (!isNaN(minErrorsNum)) {
-          query += ' AND error_count >= ?';
+          query += " AND error_count >= ?";
           bindings.push(minErrorsNum);
         }
       }
 
       // Validate sort column to prevent SQL injection
-      const validSortColumns = ['started_at', 'completed_at', 'total_keys', 'error_count', 'percentage'];
-      const sortColumn = validSortColumns.includes(sortBy) ? sortBy : 'started_at';
-      const sortDirection = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+      const validSortColumns = [
+        "started_at",
+        "completed_at",
+        "total_keys",
+        "error_count",
+        "percentage",
+      ];
+      const sortColumn = validSortColumns.includes(sortBy)
+        ? sortBy
+        : "started_at";
+      const sortDirection = sortOrder.toLowerCase() === "asc" ? "ASC" : "DESC";
 
       query += ` ORDER BY ${sortColumn} ${sortDirection} LIMIT ? OFFSET ?`;
       bindings.push(limit, offset);
 
-      const jobs = await db.prepare(query).bind(...bindings).all();
+      const jobs = await db
+        .prepare(query)
+        .bind(...bindings)
+        .all();
 
       // Get total count
-      let countQuery = 'SELECT COUNT(*) as total FROM bulk_jobs WHERE user_email = ?';
+      let countQuery =
+        "SELECT COUNT(*) as total FROM bulk_jobs WHERE user_email = ?";
       const countBindings: (string | number)[] = [userEmail];
 
       if (status) {
-        countQuery += ' AND status = ?';
+        countQuery += " AND status = ?";
         countBindings.push(status);
       }
 
       if (operationType) {
-        countQuery += ' AND operation_type = ?';
+        countQuery += " AND operation_type = ?";
         countBindings.push(operationType);
       }
 
       if (namespaceId) {
-        countQuery += ' AND namespace_id = ?';
+        countQuery += " AND namespace_id = ?";
         countBindings.push(namespaceId);
       }
 
       if (startDate) {
-        countQuery += ' AND started_at >= ?';
+        countQuery += " AND started_at >= ?";
         countBindings.push(startDate);
       }
 
       if (endDate) {
-        countQuery += ' AND started_at <= ?';
+        countQuery += " AND started_at <= ?";
         countBindings.push(endDate);
       }
 
       if (jobId) {
-        countQuery += ' AND job_id LIKE ?';
+        countQuery += " AND job_id LIKE ?";
         countBindings.push(`%${jobId}%`);
       }
 
       if (minErrors) {
         const minErrorsNum = parseInt(minErrors);
         if (!isNaN(minErrorsNum)) {
-          countQuery += ' AND error_count >= ?';
+          countQuery += " AND error_count >= ?";
           countBindings.push(minErrorsNum);
         }
       }
 
-      const countResult = await db.prepare(countQuery).bind(...countBindings).first();
-      const total = (countResult?.['total'] as number) || 0;
+      const countResult = await db
+        .prepare(countQuery)
+        .bind(...countBindings)
+        .first();
+      const total = (countResult?.["total"] as number) || 0;
 
       const response: APIResponse = {
         success: true,
@@ -386,88 +442,102 @@ export async function handleImportExportRoutes(
           jobs: jobs.results || [],
           total,
           limit,
-          offset
-        }
+          offset,
+        },
       };
 
       return new Response(JSON.stringify(response), {
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
     // GET /api/jobs/:jobId - Get job status
     const jobMatch = url.pathname.match(/^\/api\/jobs\/([^/]+)$/);
-    if (jobMatch && request.method === 'GET') {
+    if (jobMatch && request.method === "GET") {
       const jobId = jobMatch[1];
 
-      logInfo('Getting status for job', createErrorContext('jobs', 'get_job_status', {
-        metadata: { jobId }
-      }));
+      logInfo(
+        "Getting status for job",
+        createErrorContext("jobs", "get_job_status", {
+          metadata: { jobId },
+        }),
+      );
 
       if (isLocalDev || !db) {
         const response: APIResponse = {
           success: true,
           result: {
             job_id: jobId,
-            status: 'completed',
+            status: "completed",
             total_keys: 100,
             processed_keys: 100,
             error_count: 0,
             started_at: new Date().toISOString(),
-            completed_at: new Date().toISOString()
-          }
+            completed_at: new Date().toISOString(),
+          },
         };
 
         return new Response(JSON.stringify(response), {
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
 
-      const job = await db.prepare(
-        'SELECT * FROM bulk_jobs WHERE job_id = ?'
-      ).bind(jobId).first();
+      const job = await db
+        .prepare("SELECT * FROM bulk_jobs WHERE job_id = ?")
+        .bind(jobId)
+        .first();
 
       if (!job) {
-        return new Response(JSON.stringify({ error: 'Job not found' }), {
+        return new Response(JSON.stringify({ error: "Job not found" }), {
           status: 404,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
 
       // For completed export jobs, add download URL
-      const jobWithDownload: Record<string, unknown> = { ...job as Record<string, unknown> };
-      if (job['operation_type'] === 'export' && job['status'] === 'completed') {
+      const jobWithDownload: Record<string, unknown> = {
+        ...(job as Record<string, unknown>),
+      };
+      if (job["operation_type"] === "export" && job["status"] === "completed") {
         const jobIdValue = jobMatch[1];
         if (jobIdValue) {
-          jobWithDownload['download_url'] = `/api/jobs/${jobIdValue}/download`;
-          jobWithDownload['format'] = jobIdValue.startsWith('export-') ? 'json' : 'json'; // Default format
+          jobWithDownload["download_url"] = `/api/jobs/${jobIdValue}/download`;
+          jobWithDownload["format"] = jobIdValue.startsWith("export-")
+            ? "json"
+            : "json"; // Default format
         }
       }
 
       const response: APIResponse = {
         success: true,
-        result: jobWithDownload
+        result: jobWithDownload,
       };
 
       return new Response(JSON.stringify(response), {
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       });
     }
 
     // GET /api/jobs/:jobId/events - Get job audit events
     const eventsMatch = url.pathname.match(/^\/api\/jobs\/([^/]+)\/events$/);
-    if (eventsMatch && request.method === 'GET') {
+    if (eventsMatch && request.method === "GET") {
       const jobId = eventsMatch[1];
 
-      logInfo('Getting events for job', createErrorContext('jobs', 'get_job_events', {
-        metadata: { jobId }
-      }));
+      logInfo(
+        "Getting events for job",
+        createErrorContext("jobs", "get_job_events", {
+          metadata: { jobId },
+        }),
+      );
 
       if (!db) {
-        return new Response(JSON.stringify({ error: 'Database not available' }), {
-          status: 503,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        });
+        return new Response(
+          JSON.stringify({ error: "Database not available" }),
+          {
+            status: 503,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          },
+        );
       }
 
       if (isLocalDev) {
@@ -480,82 +550,115 @@ export async function handleImportExportRoutes(
               {
                 id: 1,
                 job_id: jobId,
-                event_type: 'started',
-                user_email: 'dev@localhost',
+                event_type: "started",
+                user_email: "dev@localhost",
                 timestamp: new Date().toISOString(),
-                details: JSON.stringify({ total: 100 })
+                details: JSON.stringify({ total: 100 }),
               },
               {
                 id: 2,
                 job_id: jobId,
-                event_type: 'completed',
-                user_email: 'dev@localhost',
+                event_type: "completed",
+                user_email: "dev@localhost",
                 timestamp: new Date().toISOString(),
-                details: JSON.stringify({ processed: 100, errors: 0, percentage: 100 })
-              }
-            ]
-          }
+                details: JSON.stringify({
+                  processed: 100,
+                  errors: 0,
+                  percentage: 100,
+                }),
+              },
+            ],
+          },
         };
 
         return new Response(JSON.stringify(response), {
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       }
 
       try {
         // Fetch all events for this job
-        logInfo('Fetching events for job', createErrorContext('jobs', 'get_job_events', {
-          metadata: { jobId }
-        }));
-        const events = await db.prepare(
-          'SELECT * FROM job_audit_events WHERE job_id = ? ORDER BY timestamp ASC'
-        ).bind(jobId).all<{ id: number; job_id: string; event_type: string; user_email: string; timestamp: string; details: string | null }>();
+        logInfo(
+          "Fetching events for job",
+          createErrorContext("jobs", "get_job_events", {
+            metadata: { jobId },
+          }),
+        );
+        const events = await db
+          .prepare(
+            "SELECT * FROM job_audit_events WHERE job_id = ? ORDER BY timestamp ASC",
+          )
+          .bind(jobId)
+          .all<{
+            id: number;
+            job_id: string;
+            event_type: string;
+            user_email: string;
+            timestamp: string;
+            details: string | null;
+          }>();
 
-        logInfo(`Found ${events.results?.length ?? 0} events`, createErrorContext('jobs', 'get_job_events', {
-          metadata: { jobId, eventCount: events.results?.length ?? 0 }
-        }));
+        logInfo(
+          `Found ${events.results?.length ?? 0} events`,
+          createErrorContext("jobs", "get_job_events", {
+            metadata: { jobId, eventCount: events.results?.length ?? 0 },
+          }),
+        );
 
         const response: APIResponse = {
           success: true,
           result: {
             job_id: jobId,
-            events: events.results || []
-          }
+            events: events.results || [],
+          },
         };
 
         return new Response(JSON.stringify(response), {
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
+          headers: { "Content-Type": "application/json", ...corsHeaders },
         });
       } catch (dbError) {
-        await logError(env, dbError instanceof Error ? dbError : String(dbError), createErrorContext('jobs', 'get_job_events', {
-          metadata: { jobId }
-        }), isLocalDev);
-        return new Response(JSON.stringify({
-          error: 'Database error',
-          message: 'An unexpected error occurred while retrieving job events. Please try again.'
-        }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders }
-        });
+        await logError(
+          env,
+          dbError instanceof Error ? dbError : String(dbError),
+          createErrorContext("jobs", "get_job_events", {
+            metadata: { jobId },
+          }),
+          isLocalDev,
+        );
+        return new Response(
+          JSON.stringify({
+            error: "Database error",
+            message:
+              "An unexpected error occurred while retrieving job events. Please try again.",
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          },
+        );
       }
     }
 
     // 404 for unknown routes
-    return new Response(JSON.stringify({ error: 'Not Found' }), {
+    return new Response(JSON.stringify({ error: "Not Found" }), {
       status: 404,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error) {
-    await logError(env, error instanceof Error ? error : String(error), createErrorContext('import_export', 'handle_request'), isLocalDev);
+    await logError(
+      env,
+      error instanceof Error ? error : String(error),
+      createErrorContext("import_export", "handle_request"),
+      isLocalDev,
+    );
     return new Response(
       JSON.stringify({
-        error: 'Internal Server Error'
+        error: "Internal Server Error",
       }),
       {
         status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      }
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      },
     );
   }
 }
-

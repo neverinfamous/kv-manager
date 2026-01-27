@@ -1,14 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { api, type JobEvent, type JobEventDetails } from '../services/api';
-import { Loader2, CheckCircle2, XCircle, AlertCircle, Circle } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { api, type JobEvent, type JobEventDetails } from "../services/api";
+import {
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Circle,
+} from "lucide-react";
 
 interface JobHistoryDialogProps {
   open: boolean;
@@ -16,7 +22,11 @@ interface JobHistoryDialogProps {
   onClose: () => void;
 }
 
-export function JobHistoryDialog({ open, jobId, onClose }: JobHistoryDialogProps): React.JSX.Element {
+export function JobHistoryDialog({
+  open,
+  jobId,
+  onClose,
+}: JobHistoryDialogProps): React.JSX.Element {
   const [events, setEvents] = useState<JobEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +45,9 @@ export function JobHistoryDialog({ open, jobId, onClose }: JobHistoryDialogProps
       const data = await api.getJobEvents(jobId);
       setEvents(data.events);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load job events');
+      setError(
+        err instanceof Error ? err.message : "Failed to load job events",
+      );
     } finally {
       setLoading(false);
     }
@@ -43,15 +55,15 @@ export function JobHistoryDialog({ open, jobId, onClose }: JobHistoryDialogProps
 
   const getEventIcon = (eventType: string): React.JSX.Element => {
     switch (eventType) {
-      case 'started':
+      case "started":
         return <Circle className="h-4 w-4 text-blue-500 fill-blue-500" />;
-      case 'progress_25':
-      case 'progress_50':
-      case 'progress_75':
+      case "progress_25":
+      case "progress_50":
+      case "progress_75":
         return <Circle className="h-4 w-4 text-blue-500 fill-blue-500" />;
-      case 'completed':
+      case "completed":
         return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-      case 'failed':
+      case "failed":
         return <XCircle className="h-5 w-5 text-red-500" />;
       default:
         return <AlertCircle className="h-4 w-4 text-gray-500" />;
@@ -60,24 +72,26 @@ export function JobHistoryDialog({ open, jobId, onClose }: JobHistoryDialogProps
 
   const getEventLabel = (eventType: string): string => {
     switch (eventType) {
-      case 'started':
-        return 'Started';
-      case 'progress_25':
-        return '25% Complete';
-      case 'progress_50':
-        return '50% Complete';
-      case 'progress_75':
-        return '75% Complete';
-      case 'completed':
-        return 'Completed';
-      case 'failed':
-        return 'Failed';
+      case "started":
+        return "Started";
+      case "progress_25":
+        return "25% Complete";
+      case "progress_50":
+        return "50% Complete";
+      case "progress_75":
+        return "75% Complete";
+      case "completed":
+        return "Completed";
+      case "failed":
+        return "Failed";
       default:
         return eventType;
     }
   };
 
-  const formatTimestamp = (timestamp: string): { relative: string; absolute: string } => {
+  const formatTimestamp = (
+    timestamp: string,
+  ): { relative: string; absolute: string } => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -85,8 +99,8 @@ export function JobHistoryDialog({ open, jobId, onClose }: JobHistoryDialogProps
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
 
-    let relative = '';
-    if (diffMins < 1) relative = 'just now';
+    let relative = "";
+    if (diffMins < 1) relative = "just now";
     else if (diffMins < 60) relative = `${diffMins}m ago`;
     else if (diffHours < 24) relative = `${diffHours}h ago`;
     else if (diffDays < 7) relative = `${diffDays}d ago`;
@@ -125,7 +139,7 @@ export function JobHistoryDialog({ open, jobId, onClose }: JobHistoryDialogProps
       items.push(`Error: ${details.error_message}`);
     }
 
-    return items.length > 0 ? items.join(' • ') : null;
+    return items.length > 0 ? items.join(" • ") : null;
   };
 
   return (
@@ -162,7 +176,9 @@ export function JobHistoryDialog({ open, jobId, onClose }: JobHistoryDialogProps
                 {events.map((event) => {
                   const time = formatTimestamp(event.timestamp);
                   const details = renderEventDetails(event);
-                  const isTerminal = ['completed', 'failed'].includes(event.event_type);
+                  const isTerminal = ["completed", "failed"].includes(
+                    event.event_type,
+                  );
 
                   return (
                     <div key={event.id} className="relative pl-8">
@@ -172,7 +188,9 @@ export function JobHistoryDialog({ open, jobId, onClose }: JobHistoryDialogProps
                       </div>
 
                       {/* Content */}
-                      <div className={`rounded-lg border p-3 ${isTerminal ? 'border-primary/50 bg-primary/5' : 'bg-card'}`}>
+                      <div
+                        className={`rounded-lg border p-3 ${isTerminal ? "border-primary/50 bg-primary/5" : "bg-card"}`}
+                      >
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1">
                             <div className="font-semibold text-sm">
@@ -184,7 +202,10 @@ export function JobHistoryDialog({ open, jobId, onClose }: JobHistoryDialogProps
                               </div>
                             )}
                           </div>
-                          <div className="text-xs text-muted-foreground text-right shrink-0" title={time.absolute}>
+                          <div
+                            className="text-xs text-muted-foreground text-right shrink-0"
+                            title={time.absolute}
+                          >
                             {time.relative}
                           </div>
                         </div>
@@ -206,4 +227,3 @@ export function JobHistoryDialog({ open, jobId, onClose }: JobHistoryDialogProps
     </Dialog>
   );
 }
-

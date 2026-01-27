@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,13 +6,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { useBulkJobProgress } from '../hooks/useBulkJobProgress';
-import type { JobProgress } from '../services/api';
-import { Loader2, CheckCircle2, XCircle, AlertCircle, History } from 'lucide-react';
-import { JobHistoryDialog } from './JobHistoryDialog';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useBulkJobProgress } from "../hooks/useBulkJobProgress";
+import type { JobProgress } from "../services/api";
+import {
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  History,
+} from "lucide-react";
+import { JobHistoryDialog } from "./JobHistoryDialog";
 
 interface BulkProgressDialogProps {
   open: boolean;
@@ -39,21 +45,21 @@ export function BulkProgressDialog({
 
   // Only use the hook when dialog is open and we have valid params
   const shouldConnect = open && jobId && wsUrl;
-  
+
   const { progress, error: connectionError } = useBulkJobProgress({
-    jobId: shouldConnect ? jobId : '',
-    wsUrl: shouldConnect ? wsUrl : '',
+    jobId: shouldConnect ? jobId : "",
+    wsUrl: shouldConnect ? wsUrl : "",
     onComplete: (result) => {
       setCanClose(true);
-      
+
       // Auto-close after 5 seconds on success
-      if (result.status === 'completed') {
+      if (result.status === "completed") {
         const timer = window.setTimeout(() => {
           handleClose();
         }, 5000);
         setAutoCloseTimer(timer);
       }
-      
+
       if (onComplete) {
         onComplete(result);
       }
@@ -85,13 +91,13 @@ export function BulkProgressDialog({
     }
 
     switch (progress.status) {
-      case 'queued':
+      case "queued":
         return <AlertCircle className="h-5 w-5 text-yellow-500" />;
-      case 'running':
+      case "running":
         return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
-      case 'completed':
+      case "completed":
         return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-      case 'failed':
+      case "failed":
         return <XCircle className="h-5 w-5 text-red-500" />;
       default:
         return <Loader2 className="h-5 w-5 animate-spin text-gray-500" />;
@@ -100,18 +106,18 @@ export function BulkProgressDialog({
 
   const getStatusText = (): string => {
     if (!progress) {
-      return 'Initializing...';
+      return "Initializing...";
     }
 
     switch (progress.status) {
-      case 'queued':
-        return 'Queued';
-      case 'running':
-        return 'Running';
-      case 'completed':
-        return 'Completed';
-      case 'failed':
-        return 'Failed';
+      case "queued":
+        return "Queued";
+      case "running":
+        return "Running";
+      case "completed":
+        return "Completed";
+      case "failed":
+        return "Failed";
       default:
         return progress.status;
     }
@@ -124,16 +130,23 @@ export function BulkProgressDialog({
   const currentKey = progress?.progress?.currentKey;
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && canClose && handleClose()}>
-      <DialogContent className="sm:max-w-[500px]" onPointerDownOutside={(e) => {
-        if (!canClose) {
-          e.preventDefault();
-        }
-      }} onEscapeKeyDown={(e) => {
-        if (!canClose) {
-          e.preventDefault();
-        }
-      }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => !isOpen && canClose && handleClose()}
+    >
+      <DialogContent
+        className="sm:max-w-[500px]"
+        onPointerDownOutside={(e) => {
+          if (!canClose) {
+            e.preventDefault();
+          }
+        }}
+        onEscapeKeyDown={(e) => {
+          if (!canClose) {
+            e.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {getStatusIcon()}
@@ -152,7 +165,7 @@ export function BulkProgressDialog({
           </div>
 
           {/* Progress Bar */}
-          {progress && progress.status !== 'failed' && (
+          {progress && progress.status !== "failed" && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Progress:</span>
@@ -171,18 +184,25 @@ export function BulkProgressDialog({
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Processed:</span>
-                <span className="font-medium">{processed.toLocaleString()}</span>
+                <span className="font-medium">
+                  {processed.toLocaleString()}
+                </span>
               </div>
               {errors > 0 && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Errors:</span>
-                  <span className="font-medium text-red-600">{errors.toLocaleString()}</span>
+                  <span className="font-medium text-red-600">
+                    {errors.toLocaleString()}
+                  </span>
                 </div>
               )}
-              {currentKey && progress.status === 'running' && (
+              {currentKey && progress.status === "running" && (
                 <div className="flex flex-col space-y-1">
                   <span className="text-muted-foreground">Current Key:</span>
-                  <span className="font-mono text-xs truncate" title={currentKey}>
+                  <span
+                    className="font-mono text-xs truncate"
+                    title={currentKey}
+                  >
                     {currentKey}
                   </span>
                 </div>
@@ -191,32 +211,41 @@ export function BulkProgressDialog({
           )}
 
           {/* Error Message */}
-          {(progress?.status === 'failed' || connectionError) && (
+          {(progress?.status === "failed" || connectionError) && (
             <div className="rounded-md bg-red-50 p-3 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-200">
               <p className="font-medium">Error:</p>
-              <p className="mt-1">{progress?.error || connectionError || 'Operation failed'}</p>
+              <p className="mt-1">
+                {progress?.error || connectionError || "Operation failed"}
+              </p>
             </div>
           )}
 
           {/* Success Summary */}
-          {progress?.status === 'completed' && (
+          {progress?.status === "completed" && (
             <div className="rounded-md bg-green-50 p-3 text-sm text-green-800 dark:bg-green-900/20 dark:text-green-200">
               <p className="font-medium">Operation completed successfully!</p>
               {progress.result && (
                 <div className="mt-2 space-y-1">
                   {progress.result.processed !== undefined && (
-                    <p>Processed: {progress.result.processed.toLocaleString()} keys</p>
+                    <p>
+                      Processed: {progress.result.processed.toLocaleString()}{" "}
+                      keys
+                    </p>
                   )}
-                  {progress.result.errors !== undefined && progress.result.errors > 0 && (
-                    <p>Errors: {progress.result.errors.toLocaleString()}</p>
-                  )}
-                  {progress.result.skipped !== undefined && progress.result.skipped > 0 && (
-                    <p>Skipped: {progress.result.skipped.toLocaleString()}</p>
-                  )}
+                  {progress.result.errors !== undefined &&
+                    progress.result.errors > 0 && (
+                      <p>Errors: {progress.result.errors.toLocaleString()}</p>
+                    )}
+                  {progress.result.skipped !== undefined &&
+                    progress.result.skipped > 0 && (
+                      <p>Skipped: {progress.result.skipped.toLocaleString()}</p>
+                    )}
                 </div>
               )}
               {autoCloseTimer && (
-                <p className="mt-2 text-xs">Closing automatically in 5 seconds...</p>
+                <p className="mt-2 text-xs">
+                  Closing automatically in 5 seconds...
+                </p>
               )}
             </div>
           )}
@@ -224,23 +253,25 @@ export function BulkProgressDialog({
 
         <DialogFooter className="gap-2">
           {/* View History button - shown when job is complete */}
-          {canClose && (progress?.status === 'completed' || progress?.status === 'failed') && (
-            <Button
-              onClick={() => setShowHistory(true)}
-              variant="outline"
-              className="mr-auto"
-            >
-              <History className="mr-2 h-4 w-4" />
-              View History
-            </Button>
-          )}
-          
+          {canClose &&
+            (progress?.status === "completed" ||
+              progress?.status === "failed") && (
+              <Button
+                onClick={() => setShowHistory(true)}
+                variant="outline"
+                className="mr-auto"
+              >
+                <History className="mr-2 h-4 w-4" />
+                View History
+              </Button>
+            )}
+
           <Button
             onClick={handleClose}
             disabled={!canClose}
-            variant={progress?.status === 'completed' ? 'default' : 'outline'}
+            variant={progress?.status === "completed" ? "default" : "outline"}
           >
-            {canClose ? 'Close' : 'Processing...'}
+            {canClose ? "Close" : "Processing..."}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -254,4 +285,3 @@ export function BulkProgressDialog({
     </Dialog>
   );
 }
-

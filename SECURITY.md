@@ -4,10 +4,10 @@
 
 We release patches for security vulnerabilities. Currently supported versions:
 
-| Version | Supported          |
-| ------- | ------------------ |
-| Latest  | :white_check_mark: |
-| < Latest| :x:                |
+| Version  | Supported          |
+| -------- | ------------------ |
+| Latest   | :white_check_mark: |
+| < Latest | :x:                |
 
 We recommend always using the latest version of KV Manager.
 
@@ -53,7 +53,7 @@ Please include as much information as possible:
 1. **Validation**: We'll confirm the vulnerability
 2. **Fix Development**: We'll work on a patch
 3. **Testing**: Thorough testing of the fix
-4. **Disclosure**: 
+4. **Disclosure**:
    - We'll coordinate disclosure with you
    - Security advisory published
    - Release with fix deployed
@@ -120,16 +120,19 @@ npx wrangler secret put POLICY_AUD
 ### Docker Image Dependencies
 
 **Application Dependencies (Fixed)**:
+
 - ✅ `glob` - Upgraded to 11.1.0 via package.json overrides (fixes CVE-2025-64756)
 - ✅ `tar` - Upgraded to 7.5.2 via package.json overrides (fixes CVE-2025-64118)
 
 **npm CLI Dependencies (Fixed)**:
+
 - ✅ `glob` - Manually patched to 11.1.0 in npm's installation directory (fixes CVE-2025-64756)
 - ✅ `tar` - Manually patched to 7.5.2 in npm's installation directory (fixes CVE-2025-64118)
 
 While npm@11.6.2 ships with vulnerable versions, we patch these during the Docker build process by updating npm's own `node_modules` directory. This ensures the npm CLI tool uses secure dependencies.
 
 **Alpine Base Package Vulnerabilities (Accepted Risk)**:
+
 - `curl@8.14.1-r2` - CVE-2025-10966 (MEDIUM): No fix available from Alpine Linux
 - `busybox@1.37.0-r19` - CVE-2025-46394, CVE-2024-58251 (LOW): No fixes available from Alpine Linux
 
@@ -206,4 +209,3 @@ We appreciate the security research community and will acknowledge researchers w
 ---
 
 **Security is a shared responsibility. Thank you for helping keep KV Manager secure!**
-

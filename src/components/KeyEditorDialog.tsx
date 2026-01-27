@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { api } from '../services/api'
-import { formatBytes, isValidJSON, formatJSON } from '../lib/utils'
-import { Loader2, Save, RotateCcw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import React, { useState, useEffect, useCallback } from "react";
+import { api } from "../services/api";
+import { formatBytes, isValidJSON, formatJSON } from "../lib/utils";
+import { Loader2, Save, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,20 +10,20 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Textarea } from '@/components/ui/textarea'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MetadataEditor } from './MetadataEditor'
-import { JsonEditor } from './ui/JsonEditor'
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MetadataEditor } from "./MetadataEditor";
+import { JsonEditor } from "./ui/JsonEditor";
 
 interface KeyEditorDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  namespaceId: string
-  keyName: string
-  onSaved: () => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  namespaceId: string;
+  keyName: string;
+  onSaved: () => void;
 }
 
 export function KeyEditorDialog({
@@ -33,187 +33,195 @@ export function KeyEditorDialog({
   keyName,
   onSaved,
 }: KeyEditorDialogProps): React.JSX.Element {
-  const [loading, setLoading] = useState(true)
-  const [value, setValue] = useState('')
-  const [originalValue, setOriginalValue] = useState('')
-  const [metadata, setMetadata] = useState('')
-  const [originalMetadata, setOriginalMetadata] = useState('')
-  const [ttl, setTTL] = useState('')
-  const [originalTTL, setOriginalTTL] = useState('')
-  const [expirationTimestamp, setExpirationTimestamp] = useState<number | null>(null)
-  const [hasBackup, setHasBackup] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [restoring, setRestoring] = useState(false)
-  const [error, setError] = useState('')
-  const [activeTab, setActiveTab] = useState<'value' | 'metadata' | 'backup'>('value')
-  const [valueSize, setValueSize] = useState(0)
-  const [isJSON, setIsJSON] = useState(false)
-  const [showFormatted, setShowFormatted] = useState(false)
-  const [isMetadataValid, setIsMetadataValid] = useState(true)
+  const [loading, setLoading] = useState(true);
+  const [value, setValue] = useState("");
+  const [originalValue, setOriginalValue] = useState("");
+  const [metadata, setMetadata] = useState("");
+  const [originalMetadata, setOriginalMetadata] = useState("");
+  const [ttl, setTTL] = useState("");
+  const [originalTTL, setOriginalTTL] = useState("");
+  const [expirationTimestamp, setExpirationTimestamp] = useState<number | null>(
+    null,
+  );
+  const [hasBackup, setHasBackup] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState<"value" | "metadata" | "backup">(
+    "value",
+  );
+  const [valueSize, setValueSize] = useState(0);
+  const [isJSON, setIsJSON] = useState(false);
+  const [showFormatted, setShowFormatted] = useState(false);
+  const [isMetadataValid, setIsMetadataValid] = useState(true);
 
   // Define callbacks before useEffect
   const loadKeyData = useCallback(async () => {
     try {
-      setLoading(true)
-      setError('')
-      const result = await api.getKey(namespaceId, keyName)
-      setValue(result.value)
-      setOriginalValue(result.value)
-      setValueSize(result.size || new Blob([result.value]).size)
+      setLoading(true);
+      setError("");
+      const result = await api.getKey(namespaceId, keyName);
+      setValue(result.value);
+      setOriginalValue(result.value);
+      setValueSize(result.size || new Blob([result.value]).size);
 
       // Load KV native metadata if available
       if (result.metadata && Object.keys(result.metadata).length > 0) {
-        const metadataStr = JSON.stringify(result.metadata, null, 2)
-        setMetadata(metadataStr)
-        setOriginalMetadata(metadataStr)
+        const metadataStr = JSON.stringify(result.metadata, null, 2);
+        setMetadata(metadataStr);
+        setOriginalMetadata(metadataStr);
       } else {
-        setMetadata('')
-        setOriginalMetadata('')
+        setMetadata("");
+        setOriginalMetadata("");
       }
 
       // Store expiration timestamp for display, but don't pre-populate TTL field
       // Pre-populating with remaining TTL is confusing because it decreases each time
       if (result.expiration) {
-        setExpirationTimestamp(result.expiration)
+        setExpirationTimestamp(result.expiration);
       } else {
-        setExpirationTimestamp(null)
+        setExpirationTimestamp(null);
       }
       // Leave TTL field empty - user can enter a new TTL if they want to update it
-      setTTL('')
-      setOriginalTTL('')
+      setTTL("");
+      setOriginalTTL("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load key')
+      setError(err instanceof Error ? err.message : "Failed to load key");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [namespaceId, keyName])
+  }, [namespaceId, keyName]);
 
   const checkBackup = useCallback(async () => {
     try {
-      const exists = await api.checkBackup(namespaceId, keyName)
-      setHasBackup(exists)
+      const exists = await api.checkBackup(namespaceId, keyName);
+      setHasBackup(exists);
     } catch {
-      setHasBackup(false)
+      setHasBackup(false);
     }
-  }, [namespaceId, keyName])
+  }, [namespaceId, keyName]);
 
   // Load key data when dialog opens
   useEffect(() => {
     if (open && keyName) {
-      loadKeyData()
-      checkBackup()
+      loadKeyData();
+      checkBackup();
     } else {
       // Reset state when dialog closes
-      setValue('')
-      setOriginalValue('')
-      setMetadata('')
-      setOriginalMetadata('')
-      setTTL('')
-      setOriginalTTL('')
-      setExpirationTimestamp(null)
-      setError('')
-      setActiveTab('value')
-      setShowFormatted(false)
+      setValue("");
+      setOriginalValue("");
+      setMetadata("");
+      setOriginalMetadata("");
+      setTTL("");
+      setOriginalTTL("");
+      setExpirationTimestamp(null);
+      setError("");
+      setActiveTab("value");
+      setShowFormatted(false);
     }
-  }, [open, keyName, namespaceId, loadKeyData, checkBackup])
+  }, [open, keyName, namespaceId, loadKeyData, checkBackup]);
 
   // Detect if value is JSON
   useEffect(() => {
-    const validJSON = isValidJSON(value)
-    setIsJSON(validJSON)
-  }, [value])
+    const validJSON = isValidJSON(value);
+    setIsJSON(validJSON);
+  }, [value]);
 
   const handleSave = async (): Promise<void> => {
     // Validate metadata if provided
     if (metadata.trim()) {
       if (!isValidJSON(metadata)) {
-        setError('Invalid JSON in metadata field')
-        return
+        setError("Invalid JSON in metadata field");
+        return;
       }
     }
 
     // Validate TTL if provided
     if (ttl.trim()) {
-      const ttlNum = parseInt(ttl)
+      const ttlNum = parseInt(ttl);
       if (isNaN(ttlNum) || ttlNum <= 0) {
-        setError('TTL must be a positive number')
-        return
+        setError("TTL must be a positive number");
+        return;
       }
       // Cloudflare KV requires minimum TTL of 60 seconds
       if (ttlNum < 60) {
-        setError('TTL must be at least 60 seconds (Cloudflare KV minimum)')
-        return
+        setError("TTL must be at least 60 seconds (Cloudflare KV minimum)");
+        return;
       }
     }
 
     try {
-      setSaving(true)
-      setError('')
+      setSaving(true);
+      setError("");
 
       const options: {
-        create_backup: boolean
-        expiration_ttl?: number
-        metadata?: unknown
+        create_backup: boolean;
+        expiration_ttl?: number;
+        metadata?: unknown;
       } = {
-        create_backup: true // Always create backup when editing
-      }
+        create_backup: true, // Always create backup when editing
+      };
 
       if (ttl.trim()) {
-        options.expiration_ttl = parseInt(ttl)
+        options.expiration_ttl = parseInt(ttl);
       }
 
       if (metadata.trim()) {
-        options.metadata = JSON.parse(metadata)
+        options.metadata = JSON.parse(metadata);
       }
 
-      await api.putKey(namespaceId, keyName, value, options)
+      await api.putKey(namespaceId, keyName, value, options);
 
       // Notify parent to refresh (await if it returns a promise)
-      await Promise.resolve(onSaved())
+      await Promise.resolve(onSaved());
 
-      onOpenChange(false)
+      onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save key')
+      setError(err instanceof Error ? err.message : "Failed to save key");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleRestore = async (): Promise<void> => {
-    if (!confirm('Are you sure you want to restore the previous version? Current changes will be lost.')) {
-      return
+    if (
+      !confirm(
+        "Are you sure you want to restore the previous version? Current changes will be lost.",
+      )
+    ) {
+      return;
     }
 
     try {
-      setRestoring(true)
-      setError('')
-      await api.restoreBackup(namespaceId, keyName)
+      setRestoring(true);
+      setError("");
+      await api.restoreBackup(namespaceId, keyName);
 
       // Reload the key data in the dialog
-      await loadKeyData()
-      setHasBackup(false)
+      await loadKeyData();
+      setHasBackup(false);
 
       // Notify parent to refresh the list (await if it returns a promise)
-      await Promise.resolve(onSaved())
+      await Promise.resolve(onSaved());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to restore backup')
+      setError(err instanceof Error ? err.message : "Failed to restore backup");
     } finally {
-      setRestoring(false)
+      setRestoring(false);
     }
-  }
+  };
 
   const getDisplayValue = (): string => {
     if (showFormatted && isJSON) {
-      return formatJSON(value)
+      return formatJSON(value);
     }
-    return value
-  }
+    return value;
+  };
 
   const toggleFormatting = (): void => {
     if (isJSON) {
-      setShowFormatted(!showFormatted)
+      setShowFormatted(!showFormatted);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -231,7 +239,13 @@ export function KeyEditorDialog({
           </div>
         ) : (
           <>
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'value' | 'metadata' | 'backup')} className="flex-1 flex flex-col">
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) =>
+                setActiveTab(v as "value" | "metadata" | "backup")
+              }
+              className="flex-1 flex flex-col"
+            >
               <TabsList>
                 <TabsTrigger value="value">Value</TabsTrigger>
                 <TabsTrigger value="metadata">Metadata & Tags</TabsTrigger>
@@ -250,7 +264,7 @@ export function KeyEditorDialog({
                       size="sm"
                       onClick={toggleFormatting}
                     >
-                      {showFormatted ? 'Show Minified' : 'Format JSON'}
+                      {showFormatted ? "Show Minified" : "Format JSON"}
                     </Button>
                   )}
                 </div>
@@ -259,28 +273,36 @@ export function KeyEditorDialog({
                   name="key-value"
                   value={getDisplayValue()}
                   onChange={(e) => {
-                    setValue(e.target.value)
-                    setValueSize(new Blob([e.target.value]).size)
-                    if (showFormatted) setShowFormatted(false)
+                    setValue(e.target.value);
+                    setValueSize(new Blob([e.target.value]).size);
+                    if (showFormatted) setShowFormatted(false);
                   }}
                   className="font-mono flex-1 min-h-[400px]"
                   placeholder="Enter value..."
                 />
               </TabsContent>
 
-              <TabsContent value="metadata" className="flex-1 flex flex-col gap-4 overflow-y-auto">
+              <TabsContent
+                value="metadata"
+                className="flex-1 flex flex-col gap-4 overflow-y-auto"
+              >
                 {/* TTL Section */}
                 <div className="grid gap-2">
                   <Label htmlFor="edit-ttl">TTL (seconds)</Label>
                   {expirationTimestamp && (
                     <p className="text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-md">
-                      Current expiration: {new Date(expirationTimestamp * 1000).toLocaleString()}
+                      Current expiration:{" "}
+                      {new Date(expirationTimestamp * 1000).toLocaleString()}
                     </p>
                   )}
                   <Input
                     id="edit-ttl"
                     type="number"
-                    placeholder={expirationTimestamp ? "Enter new TTL to update expiration" : "Leave empty for no expiration"}
+                    placeholder={
+                      expirationTimestamp
+                        ? "Enter new TTL to update expiration"
+                        : "Leave empty for no expiration"
+                    }
                     value={ttl}
                     onChange={(e) => setTTL(e.target.value)}
                     min="60"
@@ -312,9 +334,12 @@ export function KeyEditorDialog({
 
                 {/* D1-backed Tags and Metadata */}
                 <div className="border-t pt-4">
-                  <h4 className="font-semibold mb-2">D1-Backed Tags & Metadata</h4>
+                  <h4 className="font-semibold mb-2">
+                    D1-Backed Tags & Metadata
+                  </h4>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Tags and custom metadata stored in D1 for enhanced search and organization.
+                    Tags and custom metadata stored in D1 for enhanced search
+                    and organization.
                   </p>
                   <MetadataEditor
                     namespaceId={namespaceId}
@@ -327,13 +352,17 @@ export function KeyEditorDialog({
                 </div>
               </TabsContent>
 
-              <TabsContent value="backup" className="flex-1 flex flex-col gap-4">
+              <TabsContent
+                value="backup"
+                className="flex-1 flex flex-col gap-4"
+              >
                 {hasBackup ? (
                   <div className="space-y-4">
                     <div className="rounded-lg border border-muted p-4">
                       <h4 className="font-semibold mb-2">Backup Available</h4>
                       <p className="text-sm text-muted-foreground mb-4">
-                        A backup of the previous version of this key exists. You can restore it to undo your last change.
+                        A backup of the previous version of this key exists. You
+                        can restore it to undo your last change.
                       </p>
                       <Button
                         variant="outline"
@@ -341,14 +370,21 @@ export function KeyEditorDialog({
                         disabled={restoring}
                       >
                         {restoring ? (
-                          <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Restoring...</>
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />{" "}
+                            Restoring...
+                          </>
                         ) : (
-                          <><RotateCcw className="h-4 w-4 mr-2" /> Restore Previous Version</>
+                          <>
+                            <RotateCcw className="h-4 w-4 mr-2" /> Restore
+                            Previous Version
+                          </>
                         )}
                       </Button>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      Note: Backups are automatically created when you edit a key and expire after 24 hours.
+                      Note: Backups are automatically created when you edit a
+                      key and expire after 24 hours.
                     </div>
                   </div>
                 ) : (
@@ -377,12 +413,23 @@ export function KeyEditorDialog({
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={saving || !isMetadataValid || (value === originalValue && metadata === originalMetadata && ttl === originalTTL) || (ttl.trim() !== '' && parseInt(ttl) > 0 && parseInt(ttl) < 60)}
+                disabled={
+                  saving ||
+                  !isMetadataValid ||
+                  (value === originalValue &&
+                    metadata === originalMetadata &&
+                    ttl === originalTTL) ||
+                  (ttl.trim() !== "" && parseInt(ttl) > 0 && parseInt(ttl) < 60)
+                }
               >
                 {saving ? (
-                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...
+                  </>
                 ) : (
-                  <><Save className="h-4 w-4 mr-2" /> Save Changes</>
+                  <>
+                    <Save className="h-4 w-4 mr-2" /> Save Changes
+                  </>
                 )}
               </Button>
             </DialogFooter>
@@ -390,6 +437,5 @@ export function KeyEditorDialog({
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }
-

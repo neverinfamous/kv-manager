@@ -1,148 +1,166 @@
-import React, { useState, useEffect } from 'react'
-import { Button } from './ui/button'
-import { Label } from './ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { Download } from 'lucide-react'
-import { api, type KVNamespace } from '../services/api'
-import { logger } from '../lib/logger'
+import React, { useState, useEffect } from "react";
+import { Button } from "./ui/button";
+import { Label } from "./ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Download } from "lucide-react";
+import { api, type KVNamespace } from "../services/api";
+import { logger } from "../lib/logger";
 
 interface AuditLogProps {
-  namespaces: KVNamespace[]
-  selectedNamespaceId?: string
+  namespaces: KVNamespace[];
+  selectedNamespaceId?: string;
 }
 
 interface AuditEntry {
-  id: number
-  namespace_id: string
-  key_name: string | null
-  operation: string
-  user_email: string
-  timestamp: string
-  details: string | null
+  id: number;
+  namespace_id: string;
+  key_name: string | null;
+  operation: string;
+  user_email: string;
+  timestamp: string;
+  details: string | null;
 }
 
-export function AuditLog({ namespaces, selectedNamespaceId }: AuditLogProps): React.JSX.Element {
-  const [viewMode, setViewMode] = useState<'namespace' | 'user'>('namespace')
+export function AuditLog({
+  namespaces,
+  selectedNamespaceId,
+}: AuditLogProps): React.JSX.Element {
+  const [viewMode, setViewMode] = useState<"namespace" | "user">("namespace");
   // Default to 'all' to show all namespace events including deleted namespaces
-  const [selectedNamespace, setSelectedNamespace] = useState<string>(selectedNamespaceId || 'all')
-  const [operationFilter, setOperationFilter] = useState<string>('all')
-  const [logs, setLogs] = useState<AuditEntry[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [hasMore, setHasMore] = useState(true)
-  const [offset, setOffset] = useState(0)
-  const limit = 50
+  const [selectedNamespace, setSelectedNamespace] = useState<string>(
+    selectedNamespaceId || "all",
+  );
+  const [operationFilter, setOperationFilter] = useState<string>("all");
+  const [logs, setLogs] = useState<AuditEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(0);
+  const limit = 50;
 
   useEffect(() => {
     if (selectedNamespaceId) {
-      setSelectedNamespace(selectedNamespaceId)
-      setViewMode('namespace')
+      setSelectedNamespace(selectedNamespaceId);
+      setViewMode("namespace");
     }
-  }, [selectedNamespaceId])
+  }, [selectedNamespaceId]);
 
   useEffect(() => {
-    if (viewMode === 'namespace' && selectedNamespace) {
-      loadLogs(true)
+    if (viewMode === "namespace" && selectedNamespace) {
+      loadLogs(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode, selectedNamespace, operationFilter])
+  }, [viewMode, selectedNamespace, operationFilter]);
 
   const loadLogs = async (reset = false): Promise<void> => {
-    if (viewMode === 'namespace' && !selectedNamespace) return
+    if (viewMode === "namespace" && !selectedNamespace) return;
 
     try {
-      setLoading(true)
-      setError('')
+      setLoading(true);
+      setError("");
 
-      const currentOffset = reset ? 0 : offset
+      const currentOffset = reset ? 0 : offset;
       const options: { limit: number; offset: number; operation?: string } = {
         limit,
-        offset: currentOffset
+        offset: currentOffset,
+      };
+
+      if (operationFilter !== "all") {
+        options.operation = operationFilter;
       }
 
-      if (operationFilter !== 'all') {
-        options.operation = operationFilter
-      }
-
-      const data = await api.getAuditLog(selectedNamespace, options)
+      const data = await api.getAuditLog(selectedNamespace, options);
 
       if (reset) {
-        setLogs(data as unknown as AuditEntry[])
-        setOffset(limit)
+        setLogs(data as unknown as AuditEntry[]);
+        setOffset(limit);
       } else {
-        setLogs([...logs, ...(data as unknown as AuditEntry[])])
-        setOffset(currentOffset + limit)
+        setLogs([...logs, ...(data as unknown as AuditEntry[])]);
+        setOffset(currentOffset + limit);
       }
 
-      setHasMore(data.length === limit)
+      setHasMore(data.length === limit);
     } catch (err) {
-      logger.error('Failed to load audit log', err)
-      setError(err instanceof Error ? err.message : 'Failed to load audit log')
+      logger.error("Failed to load audit log", err);
+      setError(err instanceof Error ? err.message : "Failed to load audit log");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleLoadMore = (): void => {
-    loadLogs(false)
-  }
+    loadLogs(false);
+  };
 
   const formatTimestamp = (timestamp: string): string => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMins / 60)
-    const diffDays = Math.floor(diffHours / 24)
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
 
-    if (diffMins < 1) return 'just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
 
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString()
-  }
+    return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+  };
 
   const handleExportCSV = (): void => {
-    const headers = ['Timestamp', 'User', 'Operation', 'Key Name', 'Namespace', 'Details']
-    const rows = logs.map(log => [
+    const headers = [
+      "Timestamp",
+      "User",
+      "Operation",
+      "Key Name",
+      "Namespace",
+      "Details",
+    ];
+    const rows = logs.map((log) => [
       log.timestamp,
-      log.user_email || '',
+      log.user_email || "",
       log.operation,
-      log.key_name || '',
+      log.key_name || "",
       log.namespace_id,
-      log.details || ''
-    ])
+      log.details || "",
+    ]);
 
     const csv = [headers, ...rows]
-      .map(row => row.map(cell => `"${cell}"`).join(','))
-      .join('\n')
+      .map((row) => row.map((cell) => `"${cell}"`).join(","))
+      .join("\n");
 
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `audit-log-${selectedNamespace}-${new Date().toISOString()}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `audit-log-${selectedNamespace}-${new Date().toISOString()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const operationColors: Record<string, string> = {
-    create: 'text-green-600 dark:text-green-400',
-    update: 'text-blue-600 dark:text-blue-400',
-    delete: 'text-red-600 dark:text-red-400',
-    bulk_delete: 'text-red-700 dark:text-red-300',
-    bulk_copy: 'text-purple-600 dark:text-purple-400',
-    bulk_ttl_update: 'text-orange-600 dark:text-orange-400',
-    export: 'text-cyan-600 dark:text-cyan-400',
-    import: 'text-indigo-600 dark:text-indigo-400',
-    create_namespace: 'text-emerald-600 dark:text-emerald-400',
-    rename_namespace: 'text-sky-600 dark:text-sky-400',
-    delete_namespace: 'text-rose-600 dark:text-rose-400',
-    rename_key: 'text-amber-600 dark:text-amber-400',
-    r2_backup: 'text-violet-600 dark:text-violet-400',
-    r2_restore: 'text-fuchsia-600 dark:text-fuchsia-400'
-  }
+    create: "text-green-600 dark:text-green-400",
+    update: "text-blue-600 dark:text-blue-400",
+    delete: "text-red-600 dark:text-red-400",
+    bulk_delete: "text-red-700 dark:text-red-300",
+    bulk_copy: "text-purple-600 dark:text-purple-400",
+    bulk_ttl_update: "text-orange-600 dark:text-orange-400",
+    export: "text-cyan-600 dark:text-cyan-400",
+    import: "text-indigo-600 dark:text-indigo-400",
+    create_namespace: "text-emerald-600 dark:text-emerald-400",
+    rename_namespace: "text-sky-600 dark:text-sky-400",
+    delete_namespace: "text-rose-600 dark:text-rose-400",
+    rename_key: "text-amber-600 dark:text-amber-400",
+    r2_backup: "text-violet-600 dark:text-violet-400",
+    r2_restore: "text-fuchsia-600 dark:text-fuchsia-400",
+  };
 
   return (
     <div className="space-y-4">
@@ -162,7 +180,10 @@ export function AuditLog({ namespaces, selectedNamespaceId }: AuditLogProps): Re
           {/* Namespace Selector */}
           <div className="space-y-2">
             <Label>Namespace</Label>
-            <Select value={selectedNamespace} onValueChange={setSelectedNamespace}>
+            <Select
+              value={selectedNamespace}
+              onValueChange={setSelectedNamespace}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select a namespace" />
               </SelectTrigger>
@@ -197,9 +218,15 @@ export function AuditLog({ namespaces, selectedNamespaceId }: AuditLogProps): Re
                 <SelectItem value="import">Import</SelectItem>
                 <SelectItem value="r2_backup">R2 Backup</SelectItem>
                 <SelectItem value="r2_restore">R2 Restore</SelectItem>
-                <SelectItem value="create_namespace">Create Namespace</SelectItem>
-                <SelectItem value="rename_namespace">Rename Namespace</SelectItem>
-                <SelectItem value="delete_namespace">Delete Namespace</SelectItem>
+                <SelectItem value="create_namespace">
+                  Create Namespace
+                </SelectItem>
+                <SelectItem value="rename_namespace">
+                  Rename Namespace
+                </SelectItem>
+                <SelectItem value="delete_namespace">
+                  Delete Namespace
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -229,11 +256,16 @@ export function AuditLog({ namespaces, selectedNamespaceId }: AuditLogProps): Re
       ) : (
         <div className="bg-card rounded-lg border divide-y">
           {logs.map((log) => (
-            <div key={log.id} className="p-4 hover:bg-muted/50 transition-colors">
+            <div
+              key={log.id}
+              className="p-4 hover:bg-muted/50 transition-colors"
+            >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-3">
-                    <span className={`font-semibold text-sm ${operationColors[log.operation] || 'text-foreground'}`}>
+                    <span
+                      className={`font-semibold text-sm ${operationColors[log.operation] || "text-foreground"}`}
+                    >
                       {log.operation.toUpperCase()}
                     </span>
                     {log.key_name && (
@@ -243,10 +275,13 @@ export function AuditLog({ namespaces, selectedNamespaceId }: AuditLogProps): Re
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {log.user_email || 'Unknown user'} • {formatTimestamp(log.timestamp)}
-                    {selectedNamespace === 'all' && (
+                    {log.user_email || "Unknown user"} •{" "}
+                    {formatTimestamp(log.timestamp)}
+                    {selectedNamespace === "all" && (
                       <span className="ml-2 font-mono text-xs">
-                        • {namespaces.find(ns => ns.id === log.namespace_id)?.title || log.namespace_id}
+                        •{" "}
+                        {namespaces.find((ns) => ns.id === log.namespace_id)
+                          ?.title || log.namespace_id}
                       </span>
                     )}
                   </div>
@@ -262,14 +297,17 @@ export function AuditLog({ namespaces, selectedNamespaceId }: AuditLogProps): Re
 
           {hasMore && (
             <div className="p-4 text-center">
-              <Button onClick={handleLoadMore} variant="outline" disabled={loading}>
-                {loading ? 'Loading...' : 'Load More'}
+              <Button
+                onClick={handleLoadMore}
+                variant="outline"
+                disabled={loading}
+              >
+                {loading ? "Loading..." : "Load More"}
               </Button>
             </div>
           )}
         </div>
       )}
     </div>
-  )
+  );
 }
-

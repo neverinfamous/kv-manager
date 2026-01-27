@@ -1,6 +1,6 @@
 # Cloudflare KV Manager
 
-Last Updated January 25, 2026 - Production/Stable Version 2.2.0 
+**Last Updated January 27, 2026**
 
 [![GitHub](https://img.shields.io/badge/GitHub-neverinfamous/kv--manager-blue?logo=github)](https://github.com/neverinfamous/kv-manager)
 [![Docker Pulls](https://img.shields.io/docker/pulls/writenotenow/kv-manager)](https://hub.docker.com/r/writenotenow/kv-manager)
@@ -17,8 +17,8 @@ A full-featured management platform for Cloudflare Workers KV, designed for engi
 
 ## Tech Stack
 
-**Frontend**: React 19.2.3 | TypeScript 5.9.3 | Vite 7.3.1 | Tailwind CSS 4.1.17 | shadcn/ui
-  
+**Frontend**: React 19.2.4 | TypeScript 5.9.3 | Vite 7.3.1 | Tailwind CSS 4.1.17 | shadcn/ui
+
 **Backend**: Cloudflare Workers + KV + D1 + R2 + Durable Objects + Zero Trust
 
 ## ✨ Key Features
@@ -127,6 +127,7 @@ wrangler deploy
 ## 📚 Documentation
 
 ### User Guides
+
 - **[User Guide](https://github.com/neverinfamous/kv-manager/wiki/User-Guide)** - Complete usage instructions
 - **[Namespace Management](https://github.com/neverinfamous/kv-manager/wiki/Namespace-Management)** - Creating, managing, and organizing namespaces
 - **[Key Operations](https://github.com/neverinfamous/kv-manager/wiki/Key-Operations)** - Working with keys and values
@@ -139,12 +140,14 @@ wrangler deploy
 - **[Audit Logging](https://github.com/neverinfamous/kv-manager/wiki/Audit-Logging)** - Compliance and tracking
 
 ### Technical Documentation
+
 - **[API Reference](https://github.com/neverinfamous/kv-manager/wiki/API-Reference)** - Complete REST API documentation
 - **[Architecture](https://github.com/neverinfamous/kv-manager/wiki/Architecture)** - System design and components
 - **[Database Schema](https://github.com/neverinfamous/kv-manager/wiki/Database-Schema)** - D1 database structure
 - **[Authentication](https://github.com/neverinfamous/kv-manager/wiki/Authentication)** - Cloudflare Access integration
 
 ### Deployment & Operations
+
 - **[Installation](https://github.com/neverinfamous/kv-manager/wiki/Installation)** - Local development setup
 - **[Production Deployment](https://github.com/neverinfamous/kv-manager/wiki/Production-Deployment)** - Deploy to Cloudflare Workers
 - **[Docker Deployment](https://github.com/neverinfamous/kv-manager/wiki/Docker-Deployment)** - Docker, Compose, Kubernetes
@@ -161,6 +164,7 @@ KV Manager uses Cloudflare D1 (SQLite) for metadata, tags, audit logs, and job t
 ## 🎨 User Interface
 
 Modern, responsive design with dark/light theme support. Navigate between:
+
 - **Namespaces** - Browse and manage KV namespaces
 - **Search** - Cross-namespace key search
 - **Job History** - View bulk operations
@@ -178,6 +182,7 @@ Modern, responsive design with dark/light theme support. Navigate between:
 ## 🆘 Troubleshooting
 
 **Common issues:**
+
 - **Worker not starting** - Ensure Wrangler is installed, Node 24+
 - **Frontend connection issues** - Verify `VITE_WORKER_API` in `.env`
 - **D1 errors** - Reinitialize with `worker/schema.sql`

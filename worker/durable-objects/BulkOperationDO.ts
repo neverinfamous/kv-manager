@@ -1,4 +1,4 @@
-import type { DurableObjectState } from '@cloudflare/workers-types';
+import type { DurableObjectState } from "@cloudflare/workers-types";
 import type {
   Env,
   JobProgress,
@@ -6,10 +6,19 @@ import type {
   BulkTTLParams,
   BulkTagParams,
   BulkDeleteParams,
-  BulkMigrateParams
-} from '../types';
-import { createCfApiRequest, getD1Binding, auditLog, logJobEvent } from '../utils/helpers';
-import { logWarning, logError, createErrorContext } from '../utils/error-logger';
+  BulkMigrateParams,
+} from "../types";
+import {
+  createCfApiRequest,
+  getD1Binding,
+  auditLog,
+  logJobEvent,
+} from "../utils/helpers";
+import {
+  logWarning,
+  logError,
+  createErrorContext,
+} from "../utils/error-logger";
 
 /**
  * Durable Object for orchestrating bulk KV operations
@@ -28,52 +37,73 @@ export class BulkOperationDO {
     const url = new URL(request.url);
 
     // Job processing endpoints
-    if (url.pathname.startsWith('/process/')) {
-      const jobType = url.pathname.split('/')[2];
+    if (url.pathname.startsWith("/process/")) {
+      const jobType = url.pathname.split("/")[2];
 
       try {
-        const body = await request.json() as Record<string, unknown>;
+        const body = (await request.json()) as Record<string, unknown>;
 
         switch (jobType) {
-          case 'bulk-copy':
-            await this.processBulkCopy(body as unknown as BulkCopyParams & { jobId: string });
+          case "bulk-copy":
+            await this.processBulkCopy(
+              body as unknown as BulkCopyParams & { jobId: string },
+            );
             break;
-          case 'bulk-ttl':
-            await this.processBulkTTL(body as unknown as BulkTTLParams & { jobId: string });
+          case "bulk-ttl":
+            await this.processBulkTTL(
+              body as unknown as BulkTTLParams & { jobId: string },
+            );
             break;
-          case 'bulk-tag':
-            await this.processBulkTag(body as unknown as BulkTagParams & { jobId: string });
+          case "bulk-tag":
+            await this.processBulkTag(
+              body as unknown as BulkTagParams & { jobId: string },
+            );
             break;
-          case 'bulk-delete':
-            await this.processBulkDelete(body as unknown as BulkDeleteParams & { jobId: string });
+          case "bulk-delete":
+            await this.processBulkDelete(
+              body as unknown as BulkDeleteParams & { jobId: string },
+            );
             break;
-          case 'bulk-migrate':
-            await this.processBulkMigrate(body as unknown as BulkMigrateParams & { jobId: string; keyExpirations?: Record<string, number> });
+          case "bulk-migrate":
+            await this.processBulkMigrate(
+              body as unknown as BulkMigrateParams & {
+                jobId: string;
+                keyExpirations?: Record<string, number>;
+              },
+            );
             break;
           default:
-            return new Response(JSON.stringify({ error: 'Unknown job type' }), {
+            return new Response(JSON.stringify({ error: "Unknown job type" }), {
               status: 400,
-              headers: { 'Content-Type': 'application/json' }
+              headers: { "Content-Type": "application/json" },
             });
         }
 
         return new Response(JSON.stringify({ success: true }), {
-          headers: { 'Content-Type': 'application/json' }
+          headers: { "Content-Type": "application/json" },
         });
       } catch (error) {
-        await logError(this.env, error instanceof Error ? error : String(error), createErrorContext('bulk_operation_do', 'fetch'), false);
-        return new Response(JSON.stringify({
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }), {
-          status: 500,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        await logError(
+          this.env,
+          error instanceof Error ? error : String(error),
+          createErrorContext("bulk_operation_do", "fetch"),
+          false,
+        );
+        return new Response(
+          JSON.stringify({
+            error: error instanceof Error ? error.message : "Unknown error",
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
       }
     }
 
-    return new Response(JSON.stringify({ error: 'Not found' }), {
+    return new Response(JSON.stringify({ error: "Not found" }), {
       status: 404,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { "Content-Type": "application/json" },
     });
   }
 
@@ -97,7 +127,7 @@ export class BulkOperationDO {
       error_count?: number;
       current_key?: string;
       percentage?: number;
-    }
+    },
   ): Promise<void> {
     const db = getD1Binding(this.env);
     if (!db) return;
@@ -107,65 +137,92 @@ export class BulkOperationDO {
       const values: unknown[] = [];
 
       if (updates.status !== undefined) {
-        setClauses.push('status = ?');
+        setClauses.push("status = ?");
         values.push(updates.status);
-        if (updates.status === 'completed' || updates.status === 'failed') {
-          setClauses.push('completed_at = CURRENT_TIMESTAMP');
+        if (updates.status === "completed" || updates.status === "failed") {
+          setClauses.push("completed_at = CURRENT_TIMESTAMP");
         }
       }
       if (updates.processed_keys !== undefined) {
-        setClauses.push('processed_keys = ?');
+        setClauses.push("processed_keys = ?");
         values.push(updates.processed_keys);
       }
       if (updates.error_count !== undefined) {
-        setClauses.push('error_count = ?');
+        setClauses.push("error_count = ?");
         values.push(updates.error_count);
       }
       if (updates.current_key !== undefined) {
-        setClauses.push('current_key = ?');
+        setClauses.push("current_key = ?");
         values.push(updates.current_key);
       }
       if (updates.percentage !== undefined) {
-        setClauses.push('percentage = ?');
+        setClauses.push("percentage = ?");
         values.push(updates.percentage);
       }
 
       values.push(jobId);
 
-      await db.prepare(`
+      await db
+        .prepare(
+          `
         UPDATE bulk_jobs 
-        SET ${setClauses.join(', ')}
+        SET ${setClauses.join(", ")}
         WHERE job_id = ?
-      `).bind(...values).run();
+      `,
+        )
+        .bind(...values)
+        .run();
     } catch (error) {
-      logWarning('DB update error', createErrorContext('bulk_operation_do', 'update_job_db', {
-        metadata: { jobId, error: error instanceof Error ? error.message : String(error) }
-      }));
+      logWarning(
+        "DB update error",
+        createErrorContext("bulk_operation_do", "update_job_db", {
+          metadata: {
+            jobId,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        }),
+      );
     }
   }
 
   /**
    * Process bulk copy operation
    */
-  async processBulkCopy(params: BulkCopyParams & { jobId: string }): Promise<void> {
-    const { jobId, sourceNamespaceId, targetNamespaceId, keys, userEmail } = params;
+  async processBulkCopy(
+    params: BulkCopyParams & { jobId: string },
+  ): Promise<void> {
+    const { jobId, sourceNamespaceId, targetNamespaceId, keys, userEmail } =
+      params;
     const db = getD1Binding(this.env);
 
     try {
       // Update status to running
-      await this.updateJobInDB(jobId, { status: 'running', processed_keys: 0, error_count: 0 });
+      await this.updateJobInDB(jobId, {
+        status: "running",
+        processed_keys: 0,
+        error_count: 0,
+      });
       this.broadcastProgress({
         jobId,
-        status: 'running',
-        progress: { total: keys.length, processed: 0, errors: 0, percentage: 0 }
+        status: "running",
+        progress: {
+          total: keys.length,
+          processed: 0,
+          errors: 0,
+          percentage: 0,
+        },
       });
 
       // Log started event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'started',
+        event_type: "started",
         user_email: userEmail,
-        details: JSON.stringify({ total: keys.length, source: sourceNamespaceId, target: targetNamespaceId })
+        details: JSON.stringify({
+          total: keys.length,
+          source: sourceNamespaceId,
+          target: targetNamespaceId,
+        }),
       });
 
       const copyData: { key: string; value: string }[] = [];
@@ -180,7 +237,7 @@ export class BulkOperationDO {
         try {
           const valueRequest = createCfApiRequest(
             `/accounts/${this.env.ACCOUNT_ID}/storage/kv/namespaces/${sourceNamespaceId}/values/${encodeURIComponent(keyName)}`,
-            this.env
+            this.env,
           );
           const valueResponse = await fetch(valueRequest);
 
@@ -191,10 +248,15 @@ export class BulkOperationDO {
             errorCount++;
           }
         } catch (err) {
-          logWarning(`Failed to fetch key: ${keyName}`, createErrorContext('bulk_operation_do', 'process_bulk_copy', {
-            keyName,
-            metadata: { error: err instanceof Error ? err.message : String(err) }
-          }));
+          logWarning(
+            `Failed to fetch key: ${keyName}`,
+            createErrorContext("bulk_operation_do", "process_bulk_copy", {
+              keyName,
+              metadata: {
+                error: err instanceof Error ? err.message : String(err),
+              },
+            }),
+          );
           errorCount++;
         }
 
@@ -205,18 +267,18 @@ export class BulkOperationDO {
             processed_keys: i + 1,
             error_count: errorCount,
             current_key: keyName,
-            percentage
+            percentage,
           });
           this.broadcastProgress({
             jobId,
-            status: 'running',
+            status: "running",
             progress: {
               total: keys.length,
               processed: i + 1,
               errors: errorCount,
               currentKey: keyName,
-              percentage
-            }
+              percentage,
+            },
           });
 
           // Log milestone events
@@ -224,9 +286,16 @@ export class BulkOperationDO {
           if (milestone >= 25 && milestone > lastMilestone && milestone < 100) {
             await logJobEvent(db, {
               job_id: jobId,
-              event_type: `progress_${milestone}` as 'progress_25' | 'progress_50' | 'progress_75',
+              event_type: `progress_${milestone}` as
+                | "progress_25"
+                | "progress_50"
+                | "progress_75",
               user_email: userEmail,
-              details: JSON.stringify({ processed: i + 1, errors: errorCount, percentage })
+              details: JSON.stringify({
+                processed: i + 1,
+                errors: errorCount,
+                percentage,
+              }),
             });
             lastMilestone = milestone;
           }
@@ -245,10 +314,10 @@ export class BulkOperationDO {
             `/accounts/${this.env.ACCOUNT_ID}/storage/kv/namespaces/${targetNamespaceId}/bulk`,
             this.env,
             {
-              method: 'PUT',
+              method: "PUT",
               body: JSON.stringify(batch),
-              headers: { 'Content-Type': 'application/json' }
-            }
+              headers: { "Content-Type": "application/json" },
+            },
           );
 
           const bulkResponse = await fetch(bulkRequest);
@@ -256,32 +325,43 @@ export class BulkOperationDO {
           if (bulkResponse.ok) {
             writeProcessed += batch.length;
           } else {
-            await logError(this.env, `Bulk copy failed: ${await bulkResponse.text()}`, createErrorContext('bulk_operation_do', 'process_bulk_copy'), false);
+            await logError(
+              this.env,
+              `Bulk copy failed: ${await bulkResponse.text()}`,
+              createErrorContext("bulk_operation_do", "process_bulk_copy"),
+              false,
+            );
             errorCount += batch.length;
           }
         } catch (err) {
-          await logError(this.env, err instanceof Error ? err : String(err), createErrorContext('bulk_operation_do', 'process_bulk_copy', {
-            metadata: { operation: 'batch_copy' }
-          }), false);
+          await logError(
+            this.env,
+            err instanceof Error ? err : String(err),
+            createErrorContext("bulk_operation_do", "process_bulk_copy", {
+              metadata: { operation: "batch_copy" },
+            }),
+            false,
+          );
           errorCount += batch.length;
         }
 
         // Broadcast progress (second 50% is writing)
-        const percentage = 50 + Math.round((writeProcessed / copyData.length) * 50);
+        const percentage =
+          50 + Math.round((writeProcessed / copyData.length) * 50);
         await this.updateJobInDB(jobId, {
           processed_keys: keys.length,
           error_count: errorCount,
-          percentage
+          percentage,
         });
         this.broadcastProgress({
           jobId,
-          status: 'running',
+          status: "running",
           progress: {
             total: keys.length,
             processed: keys.length,
             errors: errorCount,
-            percentage
-          }
+            percentage,
+          },
         });
 
         // Log milestone events
@@ -289,9 +369,16 @@ export class BulkOperationDO {
         if (milestone >= 25 && milestone > lastMilestone && milestone < 100) {
           await logJobEvent(db, {
             job_id: jobId,
-            event_type: `progress_${milestone}` as 'progress_25' | 'progress_50' | 'progress_75',
+            event_type: `progress_${milestone}` as
+              | "progress_25"
+              | "progress_50"
+              | "progress_75",
             user_email: userEmail,
-            details: JSON.stringify({ processed: keys.length, errors: errorCount, percentage })
+            details: JSON.stringify({
+              processed: keys.length,
+              errors: errorCount,
+              percentage,
+            }),
           });
           lastMilestone = milestone;
         }
@@ -299,67 +386,82 @@ export class BulkOperationDO {
 
       // Mark as completed
       await this.updateJobInDB(jobId, {
-        status: 'completed',
+        status: "completed",
         processed_keys: writeProcessed,
         error_count: errorCount,
-        percentage: 100
+        percentage: 100,
       });
 
       this.broadcastProgress({
         jobId,
-        status: 'completed',
+        status: "completed",
         progress: {
           total: keys.length,
           processed: writeProcessed,
           errors: errorCount,
-          percentage: 100
+          percentage: 100,
         },
-        result: { processed: writeProcessed, errors: errorCount }
+        result: { processed: writeProcessed, errors: errorCount },
       });
 
       // Log completed event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'completed',
+        event_type: "completed",
         user_email: userEmail,
-        details: JSON.stringify({ processed: writeProcessed, errors: errorCount, percentage: 100 })
+        details: JSON.stringify({
+          processed: writeProcessed,
+          errors: errorCount,
+          percentage: 100,
+        }),
       });
 
       // Audit log
       await auditLog(db, {
         namespace_id: sourceNamespaceId,
-        operation: 'bulk_copy',
+        operation: "bulk_copy",
         user_email: userEmail,
         details: JSON.stringify({
           target_namespace_id: targetNamespaceId,
           total: keys.length,
           processed: writeProcessed,
           errors: errorCount,
-          job_id: jobId
-        })
+          job_id: jobId,
+        }),
       });
-
     } catch (error) {
-      await logError(this.env, error instanceof Error ? error : String(error), createErrorContext('bulk_operation_do', 'process_bulk_copy', {
-        namespaceId: sourceNamespaceId,
-        metadata: { jobId }
-      }), false);
+      await logError(
+        this.env,
+        error instanceof Error ? error : String(error),
+        createErrorContext("bulk_operation_do", "process_bulk_copy", {
+          namespaceId: sourceNamespaceId,
+          metadata: { jobId },
+        }),
+        false,
+      );
 
-      await this.updateJobInDB(jobId, { status: 'failed' });
+      await this.updateJobInDB(jobId, { status: "failed" });
 
       this.broadcastProgress({
         jobId,
-        status: 'failed',
-        progress: { total: keys.length, processed: 0, errors: keys.length, percentage: 0 },
-        error: error instanceof Error ? error.message : 'Unknown error'
+        status: "failed",
+        progress: {
+          total: keys.length,
+          processed: 0,
+          errors: keys.length,
+          percentage: 0,
+        },
+        error: error instanceof Error ? error.message : "Unknown error",
       });
 
       // Log failed event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'failed',
+        event_type: "failed",
         user_email: userEmail,
-        details: JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' })
+        details: JSON.stringify({
+          error: error instanceof Error ? error.message : "Unknown error",
+        }),
       });
     }
   }
@@ -367,24 +469,35 @@ export class BulkOperationDO {
   /**
    * Process bulk TTL update operation
    */
-  async processBulkTTL(params: BulkTTLParams & { jobId: string }): Promise<void> {
+  async processBulkTTL(
+    params: BulkTTLParams & { jobId: string },
+  ): Promise<void> {
     const { jobId, namespaceId, keys, ttl, userEmail } = params;
     const db = getD1Binding(this.env);
 
     try {
-      await this.updateJobInDB(jobId, { status: 'running', processed_keys: 0, error_count: 0 });
+      await this.updateJobInDB(jobId, {
+        status: "running",
+        processed_keys: 0,
+        error_count: 0,
+      });
       this.broadcastProgress({
         jobId,
-        status: 'running',
-        progress: { total: keys.length, processed: 0, errors: 0, percentage: 0 }
+        status: "running",
+        progress: {
+          total: keys.length,
+          processed: 0,
+          errors: 0,
+          percentage: 0,
+        },
       });
 
       // Log started event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'started',
+        event_type: "started",
         user_email: userEmail,
-        details: JSON.stringify({ total: keys.length, ttl })
+        details: JSON.stringify({ total: keys.length, ttl }),
       });
 
       let processedCount = 0;
@@ -400,7 +513,7 @@ export class BulkOperationDO {
           // Get current value
           const getRequest = createCfApiRequest(
             `/accounts/${this.env.ACCOUNT_ID}/storage/kv/namespaces/${namespaceId}/values/${encodeURIComponent(keyName)}`,
-            this.env
+            this.env,
           );
           const getResponse = await fetch(getRequest);
 
@@ -416,10 +529,10 @@ export class BulkOperationDO {
             `/accounts/${this.env.ACCOUNT_ID}/storage/kv/namespaces/${namespaceId}/values/${encodeURIComponent(keyName)}?expiration_ttl=${ttl}`,
             this.env,
             {
-              method: 'PUT',
+              method: "PUT",
               body: value,
-              headers: { 'Content-Type': 'text/plain' }
-            }
+              headers: { "Content-Type": "text/plain" },
+            },
           );
 
           const putResponse = await fetch(putRequest);
@@ -430,11 +543,16 @@ export class BulkOperationDO {
             errorCount++;
           }
         } catch (err) {
-          logWarning(`Failed to update TTL for key: ${keyName}`, createErrorContext('bulk_operation_do', 'process_bulk_ttl', {
-            keyName,
-            namespaceId,
-            metadata: { error: err instanceof Error ? err.message : String(err) }
-          }));
+          logWarning(
+            `Failed to update TTL for key: ${keyName}`,
+            createErrorContext("bulk_operation_do", "process_bulk_ttl", {
+              keyName,
+              namespaceId,
+              metadata: {
+                error: err instanceof Error ? err.message : String(err),
+              },
+            }),
+          );
           errorCount++;
         }
 
@@ -445,18 +563,18 @@ export class BulkOperationDO {
             processed_keys: i + 1,
             error_count: errorCount,
             current_key: keyName,
-            percentage
+            percentage,
           });
           this.broadcastProgress({
             jobId,
-            status: 'running',
+            status: "running",
             progress: {
               total: keys.length,
               processed: i + 1,
               errors: errorCount,
               currentKey: keyName,
-              percentage
-            }
+              percentage,
+            },
           });
 
           // Log milestone events
@@ -464,9 +582,16 @@ export class BulkOperationDO {
           if (milestone >= 25 && milestone > lastMilestone && milestone < 100) {
             await logJobEvent(db, {
               job_id: jobId,
-              event_type: `progress_${milestone}` as 'progress_25' | 'progress_50' | 'progress_75',
+              event_type: `progress_${milestone}` as
+                | "progress_25"
+                | "progress_50"
+                | "progress_75",
               user_email: userEmail,
-              details: JSON.stringify({ processed: i + 1, errors: errorCount, percentage })
+              details: JSON.stringify({
+                processed: i + 1,
+                errors: errorCount,
+                percentage,
+              }),
             });
             lastMilestone = milestone;
           }
@@ -475,67 +600,82 @@ export class BulkOperationDO {
 
       // Mark as completed
       await this.updateJobInDB(jobId, {
-        status: 'completed',
+        status: "completed",
         processed_keys: processedCount,
         error_count: errorCount,
-        percentage: 100
+        percentage: 100,
       });
 
       this.broadcastProgress({
         jobId,
-        status: 'completed',
+        status: "completed",
         progress: {
           total: keys.length,
           processed: processedCount,
           errors: errorCount,
-          percentage: 100
+          percentage: 100,
         },
-        result: { processed: processedCount, errors: errorCount }
+        result: { processed: processedCount, errors: errorCount },
       });
 
       // Log completed event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'completed',
+        event_type: "completed",
         user_email: userEmail,
-        details: JSON.stringify({ processed: processedCount, errors: errorCount, percentage: 100 })
+        details: JSON.stringify({
+          processed: processedCount,
+          errors: errorCount,
+          percentage: 100,
+        }),
       });
 
       // Audit log
       await auditLog(db, {
         namespace_id: namespaceId,
-        operation: 'bulk_ttl_update',
+        operation: "bulk_ttl_update",
         user_email: userEmail,
         details: JSON.stringify({
           ttl,
           total: keys.length,
           processed: processedCount,
           errors: errorCount,
-          job_id: jobId
-        })
+          job_id: jobId,
+        }),
       });
-
     } catch (error) {
-      await logError(this.env, error instanceof Error ? error : String(error), createErrorContext('bulk_operation_do', 'process_bulk_ttl', {
-        namespaceId,
-        metadata: { jobId }
-      }), false);
+      await logError(
+        this.env,
+        error instanceof Error ? error : String(error),
+        createErrorContext("bulk_operation_do", "process_bulk_ttl", {
+          namespaceId,
+          metadata: { jobId },
+        }),
+        false,
+      );
 
-      await this.updateJobInDB(jobId, { status: 'failed' });
+      await this.updateJobInDB(jobId, { status: "failed" });
 
       this.broadcastProgress({
         jobId,
-        status: 'failed',
-        progress: { total: keys.length, processed: 0, errors: keys.length, percentage: 0 },
-        error: error instanceof Error ? error.message : 'Unknown error'
+        status: "failed",
+        progress: {
+          total: keys.length,
+          processed: 0,
+          errors: keys.length,
+          percentage: 0,
+        },
+        error: error instanceof Error ? error.message : "Unknown error",
       });
 
       // Log failed event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'failed',
+        event_type: "failed",
         user_email: userEmail,
-        details: JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' })
+        details: JSON.stringify({
+          error: error instanceof Error ? error.message : "Unknown error",
+        }),
       });
     }
   }
@@ -543,24 +683,35 @@ export class BulkOperationDO {
   /**
    * Process bulk tag operation
    */
-  async processBulkTag(params: BulkTagParams & { jobId: string }): Promise<void> {
+  async processBulkTag(
+    params: BulkTagParams & { jobId: string },
+  ): Promise<void> {
     const { jobId, namespaceId, keys, tags, operation, userEmail } = params;
     const db = getD1Binding(this.env);
 
     try {
-      await this.updateJobInDB(jobId, { status: 'running', processed_keys: 0, error_count: 0 });
+      await this.updateJobInDB(jobId, {
+        status: "running",
+        processed_keys: 0,
+        error_count: 0,
+      });
       this.broadcastProgress({
         jobId,
-        status: 'running',
-        progress: { total: keys.length, processed: 0, errors: 0, percentage: 0 }
+        status: "running",
+        progress: {
+          total: keys.length,
+          processed: 0,
+          errors: 0,
+          percentage: 0,
+        },
       });
 
       // Log started event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'started',
+        event_type: "started",
         user_email: userEmail,
-        details: JSON.stringify({ total: keys.length, tags, operation })
+        details: JSON.stringify({ total: keys.length, tags, operation }),
       });
 
       let processedCount = 0;
@@ -578,14 +729,17 @@ export class BulkOperationDO {
           }
 
           // Get existing metadata
-          const existing = await db.prepare(
-            'SELECT tags FROM key_metadata WHERE namespace_id = ? AND key_name = ?'
-          ).bind(namespaceId, keyName).first();
+          const existing = await db
+            .prepare(
+              "SELECT tags FROM key_metadata WHERE namespace_id = ? AND key_name = ?",
+            )
+            .bind(namespaceId, keyName)
+            .first();
 
           let existingTags: string[] = [];
-          if (existing && existing['tags']) {
+          if (existing && existing["tags"]) {
             try {
-              existingTags = JSON.parse(existing['tags'] as string) as string[];
+              existingTags = JSON.parse(existing["tags"] as string) as string[];
             } catch {
               existingTags = [];
             }
@@ -594,13 +748,13 @@ export class BulkOperationDO {
           // Apply tag operation
           let newTags: string[];
           switch (operation) {
-            case 'add':
+            case "add":
               newTags = [...new Set([...existingTags, ...tags])];
               break;
-            case 'remove':
-              newTags = existingTags.filter(t => !tags.includes(t));
+            case "remove":
+              newTags = existingTags.filter((t) => !tags.includes(t));
               break;
-            case 'replace':
+            case "replace":
               newTags = tags;
               break;
             default:
@@ -608,20 +762,30 @@ export class BulkOperationDO {
           }
 
           // Upsert metadata
-          await db.prepare(`
+          await db
+            .prepare(
+              `
             INSERT INTO key_metadata (namespace_id, key_name, tags, updated_at)
             VALUES (?, ?, ?, CURRENT_TIMESTAMP)
             ON CONFLICT(namespace_id, key_name) 
             DO UPDATE SET tags = excluded.tags, updated_at = CURRENT_TIMESTAMP
-          `).bind(namespaceId, keyName, JSON.stringify(newTags)).run();
+          `,
+            )
+            .bind(namespaceId, keyName, JSON.stringify(newTags))
+            .run();
 
           processedCount++;
         } catch (err) {
-          logWarning(`Failed to tag key: ${keyName}`, createErrorContext('bulk_operation_do', 'process_bulk_tag', {
-            keyName,
-            namespaceId,
-            metadata: { error: err instanceof Error ? err.message : String(err) }
-          }));
+          logWarning(
+            `Failed to tag key: ${keyName}`,
+            createErrorContext("bulk_operation_do", "process_bulk_tag", {
+              keyName,
+              namespaceId,
+              metadata: {
+                error: err instanceof Error ? err.message : String(err),
+              },
+            }),
+          );
           errorCount++;
         }
 
@@ -632,18 +796,18 @@ export class BulkOperationDO {
             processed_keys: i + 1,
             error_count: errorCount,
             current_key: keyName,
-            percentage
+            percentage,
           });
           this.broadcastProgress({
             jobId,
-            status: 'running',
+            status: "running",
             progress: {
               total: keys.length,
               processed: i + 1,
               errors: errorCount,
               currentKey: keyName,
-              percentage
-            }
+              percentage,
+            },
           });
 
           // Log milestone events
@@ -651,9 +815,16 @@ export class BulkOperationDO {
           if (milestone >= 25 && milestone > lastMilestone && milestone < 100) {
             await logJobEvent(db, {
               job_id: jobId,
-              event_type: `progress_${milestone}` as 'progress_25' | 'progress_50' | 'progress_75',
+              event_type: `progress_${milestone}` as
+                | "progress_25"
+                | "progress_50"
+                | "progress_75",
               user_email: userEmail,
-              details: JSON.stringify({ processed: i + 1, errors: errorCount, percentage })
+              details: JSON.stringify({
+                processed: i + 1,
+                errors: errorCount,
+                percentage,
+              }),
             });
             lastMilestone = milestone;
           }
@@ -662,36 +833,40 @@ export class BulkOperationDO {
 
       // Mark as completed
       await this.updateJobInDB(jobId, {
-        status: 'completed',
+        status: "completed",
         processed_keys: processedCount,
         error_count: errorCount,
-        percentage: 100
+        percentage: 100,
       });
 
       this.broadcastProgress({
         jobId,
-        status: 'completed',
+        status: "completed",
         progress: {
           total: keys.length,
           processed: processedCount,
           errors: errorCount,
-          percentage: 100
+          percentage: 100,
         },
-        result: { processed: processedCount, errors: errorCount }
+        result: { processed: processedCount, errors: errorCount },
       });
 
       // Log completed event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'completed',
+        event_type: "completed",
         user_email: userEmail,
-        details: JSON.stringify({ processed: processedCount, errors: errorCount, percentage: 100 })
+        details: JSON.stringify({
+          processed: processedCount,
+          errors: errorCount,
+          percentage: 100,
+        }),
       });
 
       // Audit log
       await auditLog(db, {
         namespace_id: namespaceId,
-        operation: 'bulk_tag',
+        operation: "bulk_tag",
         user_email: userEmail,
         details: JSON.stringify({
           operation,
@@ -699,31 +874,42 @@ export class BulkOperationDO {
           total: keys.length,
           processed: processedCount,
           errors: errorCount,
-          job_id: jobId
-        })
+          job_id: jobId,
+        }),
       });
-
     } catch (error) {
-      await logError(this.env, error instanceof Error ? error : String(error), createErrorContext('bulk_operation_do', 'process_bulk_tag', {
-        namespaceId,
-        metadata: { jobId }
-      }), false);
+      await logError(
+        this.env,
+        error instanceof Error ? error : String(error),
+        createErrorContext("bulk_operation_do", "process_bulk_tag", {
+          namespaceId,
+          metadata: { jobId },
+        }),
+        false,
+      );
 
-      await this.updateJobInDB(jobId, { status: 'failed' });
+      await this.updateJobInDB(jobId, { status: "failed" });
 
       this.broadcastProgress({
         jobId,
-        status: 'failed',
-        progress: { total: keys.length, processed: 0, errors: keys.length, percentage: 0 },
-        error: error instanceof Error ? error.message : 'Unknown error'
+        status: "failed",
+        progress: {
+          total: keys.length,
+          processed: 0,
+          errors: keys.length,
+          percentage: 0,
+        },
+        error: error instanceof Error ? error.message : "Unknown error",
       });
 
       // Log failed event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'failed',
+        event_type: "failed",
         user_email: userEmail,
-        details: JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' })
+        details: JSON.stringify({
+          error: error instanceof Error ? error.message : "Unknown error",
+        }),
       });
     }
   }
@@ -731,24 +917,35 @@ export class BulkOperationDO {
   /**
    * Process bulk delete operation
    */
-  async processBulkDelete(params: BulkDeleteParams & { jobId: string }): Promise<void> {
+  async processBulkDelete(
+    params: BulkDeleteParams & { jobId: string },
+  ): Promise<void> {
     const { jobId, namespaceId, keys, userEmail } = params;
     const db = getD1Binding(this.env);
 
     try {
-      await this.updateJobInDB(jobId, { status: 'running', processed_keys: 0, error_count: 0 });
+      await this.updateJobInDB(jobId, {
+        status: "running",
+        processed_keys: 0,
+        error_count: 0,
+      });
       this.broadcastProgress({
         jobId,
-        status: 'running',
-        progress: { total: keys.length, processed: 0, errors: 0, percentage: 0 }
+        status: "running",
+        progress: {
+          total: keys.length,
+          processed: 0,
+          errors: 0,
+          percentage: 0,
+        },
       });
 
       // Log started event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'started',
+        event_type: "started",
         user_email: userEmail,
-        details: JSON.stringify({ total: keys.length })
+        details: JSON.stringify({ total: keys.length }),
       });
 
       let processedCount = 0;
@@ -766,10 +963,10 @@ export class BulkOperationDO {
             `/accounts/${this.env.ACCOUNT_ID}/storage/kv/namespaces/${namespaceId}/bulk`,
             this.env,
             {
-              method: 'DELETE',
+              method: "DELETE",
               body: JSON.stringify(batch),
-              headers: { 'Content-Type': 'application/json' }
-            }
+              headers: { "Content-Type": "application/json" },
+            },
           );
 
           const bulkResponse = await fetch(bulkRequest);
@@ -781,29 +978,54 @@ export class BulkOperationDO {
             if (db) {
               try {
                 // Delete metadata entries in batches (SQLite has limits on parameters)
-                const placeholders = batch.map(() => '?').join(',');
-                await db.prepare(
-                  `DELETE FROM key_metadata WHERE namespace_id = ? AND key_name IN (${placeholders})`
-                ).bind(namespaceId, ...batch).run();
+                const placeholders = batch.map(() => "?").join(",");
+                await db
+                  .prepare(
+                    `DELETE FROM key_metadata WHERE namespace_id = ? AND key_name IN (${placeholders})`,
+                  )
+                  .bind(namespaceId, ...batch)
+                  .run();
               } catch (metaErr) {
-                logWarning('Failed to delete D1 metadata entries', createErrorContext('bulk_operation_do', 'process_bulk_delete', {
-                  namespaceId,
-                  metadata: { error: metaErr instanceof Error ? metaErr.message : String(metaErr) }
-                }));
+                logWarning(
+                  "Failed to delete D1 metadata entries",
+                  createErrorContext(
+                    "bulk_operation_do",
+                    "process_bulk_delete",
+                    {
+                      namespaceId,
+                      metadata: {
+                        error:
+                          metaErr instanceof Error
+                            ? metaErr.message
+                            : String(metaErr),
+                      },
+                    },
+                  ),
+                );
                 // Don't fail the operation if metadata cleanup fails
               }
             }
           } else {
-            await logError(this.env, `Bulk delete failed: ${await bulkResponse.text()}`, createErrorContext('bulk_operation_do', 'process_bulk_delete', {
-              namespaceId
-            }), false);
+            await logError(
+              this.env,
+              `Bulk delete failed: ${await bulkResponse.text()}`,
+              createErrorContext("bulk_operation_do", "process_bulk_delete", {
+                namespaceId,
+              }),
+              false,
+            );
             errorCount += batch.length;
           }
         } catch (err) {
-          await logError(this.env, err instanceof Error ? err : String(err), createErrorContext('bulk_operation_do', 'process_bulk_delete', {
-            namespaceId,
-            metadata: { operation: 'batch_delete' }
-          }), false);
+          await logError(
+            this.env,
+            err instanceof Error ? err : String(err),
+            createErrorContext("bulk_operation_do", "process_bulk_delete", {
+              namespaceId,
+              metadata: { operation: "batch_delete" },
+            }),
+            false,
+          );
           errorCount += batch.length;
         }
 
@@ -812,17 +1034,17 @@ export class BulkOperationDO {
         await this.updateJobInDB(jobId, {
           processed_keys: i + batch.length,
           error_count: errorCount,
-          percentage
+          percentage,
         });
         this.broadcastProgress({
           jobId,
-          status: 'running',
+          status: "running",
           progress: {
             total: keys.length,
             processed: i + batch.length,
             errors: errorCount,
-            percentage
-          }
+            percentage,
+          },
         });
 
         // Log milestone events
@@ -830,9 +1052,16 @@ export class BulkOperationDO {
         if (milestone >= 25 && milestone > lastMilestone && milestone < 100) {
           await logJobEvent(db, {
             job_id: jobId,
-            event_type: `progress_${milestone}` as 'progress_25' | 'progress_50' | 'progress_75',
+            event_type: `progress_${milestone}` as
+              | "progress_25"
+              | "progress_50"
+              | "progress_75",
             user_email: userEmail,
-            details: JSON.stringify({ processed: i + batch.length, errors: errorCount, percentage })
+            details: JSON.stringify({
+              processed: i + batch.length,
+              errors: errorCount,
+              percentage,
+            }),
           });
           lastMilestone = milestone;
         }
@@ -840,66 +1069,81 @@ export class BulkOperationDO {
 
       // Mark as completed
       await this.updateJobInDB(jobId, {
-        status: 'completed',
+        status: "completed",
         processed_keys: processedCount,
         error_count: errorCount,
-        percentage: 100
+        percentage: 100,
       });
 
       this.broadcastProgress({
         jobId,
-        status: 'completed',
+        status: "completed",
         progress: {
           total: keys.length,
           processed: processedCount,
           errors: errorCount,
-          percentage: 100
+          percentage: 100,
         },
-        result: { processed: processedCount, errors: errorCount }
+        result: { processed: processedCount, errors: errorCount },
       });
 
       // Log completed event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'completed',
+        event_type: "completed",
         user_email: userEmail,
-        details: JSON.stringify({ processed: processedCount, errors: errorCount, percentage: 100 })
+        details: JSON.stringify({
+          processed: processedCount,
+          errors: errorCount,
+          percentage: 100,
+        }),
       });
 
       // Audit log
       await auditLog(db, {
         namespace_id: namespaceId,
-        operation: 'bulk_delete',
+        operation: "bulk_delete",
         user_email: userEmail,
         details: JSON.stringify({
           total: keys.length,
           processed: processedCount,
           errors: errorCount,
-          job_id: jobId
-        })
+          job_id: jobId,
+        }),
       });
-
     } catch (error) {
-      await logError(this.env, error instanceof Error ? error : String(error), createErrorContext('bulk_operation_do', 'process_bulk_delete', {
-        namespaceId,
-        metadata: { jobId }
-      }), false);
+      await logError(
+        this.env,
+        error instanceof Error ? error : String(error),
+        createErrorContext("bulk_operation_do", "process_bulk_delete", {
+          namespaceId,
+          metadata: { jobId },
+        }),
+        false,
+      );
 
-      await this.updateJobInDB(jobId, { status: 'failed' });
+      await this.updateJobInDB(jobId, { status: "failed" });
 
       this.broadcastProgress({
         jobId,
-        status: 'failed',
-        progress: { total: keys.length, processed: 0, errors: keys.length, percentage: 0 },
-        error: error instanceof Error ? error.message : 'Unknown error'
+        status: "failed",
+        progress: {
+          total: keys.length,
+          processed: 0,
+          errors: keys.length,
+          percentage: 0,
+        },
+        error: error instanceof Error ? error.message : "Unknown error",
       });
 
       // Log failed event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'failed',
+        event_type: "failed",
         user_email: userEmail,
-        details: JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' })
+        details: JSON.stringify({
+          error: error instanceof Error ? error.message : "Unknown error",
+        }),
       });
     }
   }
@@ -913,7 +1157,10 @@ export class BulkOperationDO {
    * - Source key deletion after verification
    */
   async processBulkMigrate(
-    params: BulkMigrateParams & { jobId: string; keyExpirations?: Record<string, number> }
+    params: BulkMigrateParams & {
+      jobId: string;
+      keyExpirations?: Record<string, number>;
+    },
   ): Promise<void> {
     const {
       jobId,
@@ -925,24 +1172,33 @@ export class BulkOperationDO {
       preserveTTL,
       createBackup,
       userEmail,
-      keyExpirations = {}
+      keyExpirations = {},
     } = params;
     const db = getD1Binding(this.env);
     const warnings: string[] = [];
 
     try {
       // Update status to running
-      await this.updateJobInDB(jobId, { status: 'running', processed_keys: 0, error_count: 0 });
+      await this.updateJobInDB(jobId, {
+        status: "running",
+        processed_keys: 0,
+        error_count: 0,
+      });
       this.broadcastProgress({
         jobId,
-        status: 'running',
-        progress: { total: keys.length, processed: 0, errors: 0, percentage: 0 }
+        status: "running",
+        progress: {
+          total: keys.length,
+          processed: 0,
+          errors: 0,
+          percentage: 0,
+        },
       });
 
       // Log started event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'started',
+        event_type: "started",
         user_email: userEmail,
         details: JSON.stringify({
           total: keys.length,
@@ -951,8 +1207,8 @@ export class BulkOperationDO {
           cutoverMode,
           migrateMetadata,
           preserveTTL,
-          createBackup
-        })
+          createBackup,
+        }),
       });
 
       // Step 1: Optional R2 backup before migration
@@ -963,12 +1219,16 @@ export class BulkOperationDO {
           backupPath = `backups/${sourceNamespaceId}/pre-migrate-${timestamp}.json`;
 
           // Fetch all key values for backup
-          const backupData: { key: string; value: string; expiration?: number }[] = [];
+          const backupData: {
+            key: string;
+            value: string;
+            expiration?: number;
+          }[] = [];
           for (const keyName of keys) {
             try {
               const valueRequest = createCfApiRequest(
                 `/accounts/${this.env.ACCOUNT_ID}/storage/kv/namespaces/${sourceNamespaceId}/values/${encodeURIComponent(keyName)}`,
-                this.env
+                this.env,
               );
               const valueResponse = await fetch(valueRequest);
               if (valueResponse.ok) {
@@ -976,7 +1236,9 @@ export class BulkOperationDO {
                 backupData.push({
                   key: keyName,
                   value,
-                  ...(keyExpirations[keyName] !== undefined ? { expiration: keyExpirations[keyName] } : {})
+                  ...(keyExpirations[keyName] !== undefined
+                    ? { expiration: keyExpirations[keyName] }
+                    : {}),
                 });
               }
             } catch {
@@ -984,14 +1246,29 @@ export class BulkOperationDO {
             }
           }
 
-          await this.env.BACKUP_BUCKET.put(backupPath, JSON.stringify(backupData, null, 2), {
-            httpMetadata: { contentType: 'application/json' }
-          });
+          await this.env.BACKUP_BUCKET.put(
+            backupPath,
+            JSON.stringify(backupData, null, 2),
+            {
+              httpMetadata: { contentType: "application/json" },
+            },
+          );
         } catch (backupError) {
-          warnings.push(`Backup creation failed: ${backupError instanceof Error ? backupError.message : 'Unknown error'}`);
-          logWarning('Failed to create R2 backup before migration', createErrorContext('bulk_operation_do', 'process_bulk_migrate', {
-            metadata: { jobId, error: backupError instanceof Error ? backupError.message : String(backupError) }
-          }));
+          warnings.push(
+            `Backup creation failed: ${backupError instanceof Error ? backupError.message : "Unknown error"}`,
+          );
+          logWarning(
+            "Failed to create R2 backup before migration",
+            createErrorContext("bulk_operation_do", "process_bulk_migrate", {
+              metadata: {
+                jobId,
+                error:
+                  backupError instanceof Error
+                    ? backupError.message
+                    : String(backupError),
+              },
+            }),
+          );
         }
       }
 
@@ -1012,7 +1289,7 @@ export class BulkOperationDO {
         try {
           const valueRequest = createCfApiRequest(
             `/accounts/${this.env.ACCOUNT_ID}/storage/kv/namespaces/${sourceNamespaceId}/values/${encodeURIComponent(keyName)}`,
-            this.env
+            this.env,
           );
           const valueResponse = await fetch(valueRequest);
 
@@ -1032,7 +1309,9 @@ export class BulkOperationDO {
               } else if (remainingTtl > 0) {
                 // Use minimum TTL for nearly-expired keys
                 item.expiration_ttl = 60;
-                warnings.push(`Key "${keyName}" had TTL < 60s, set to minimum 60s`);
+                warnings.push(
+                  `Key "${keyName}" had TTL < 60s, set to minimum 60s`,
+                );
               }
               // If TTL <= 0, the key is expired - we still migrate it without TTL
             }
@@ -1042,10 +1321,15 @@ export class BulkOperationDO {
             errorCount++;
           }
         } catch (err) {
-          logWarning(`Failed to fetch key for migration: ${keyName}`, createErrorContext('bulk_operation_do', 'process_bulk_migrate', {
-            keyName,
-            metadata: { error: err instanceof Error ? err.message : String(err) }
-          }));
+          logWarning(
+            `Failed to fetch key for migration: ${keyName}`,
+            createErrorContext("bulk_operation_do", "process_bulk_migrate", {
+              keyName,
+              metadata: {
+                error: err instanceof Error ? err.message : String(err),
+              },
+            }),
+          );
           errorCount++;
         }
 
@@ -1056,18 +1340,18 @@ export class BulkOperationDO {
             processed_keys: i + 1,
             error_count: errorCount,
             current_key: keyName,
-            percentage
+            percentage,
           });
           this.broadcastProgress({
             jobId,
-            status: 'running',
+            status: "running",
             progress: {
               total: keys.length,
               processed: i + 1,
               errors: errorCount,
               currentKey: keyName,
-              percentage
-            }
+              percentage,
+            },
           });
 
           // Log milestone events
@@ -1075,9 +1359,17 @@ export class BulkOperationDO {
           if (milestone >= 25 && milestone > lastMilestone && milestone < 100) {
             await logJobEvent(db, {
               job_id: jobId,
-              event_type: `progress_${milestone}` as 'progress_25' | 'progress_50' | 'progress_75',
+              event_type: `progress_${milestone}` as
+                | "progress_25"
+                | "progress_50"
+                | "progress_75",
               user_email: userEmail,
-              details: JSON.stringify({ processed: i + 1, errors: errorCount, percentage, phase: 'fetch' })
+              details: JSON.stringify({
+                processed: i + 1,
+                errors: errorCount,
+                percentage,
+                phase: "fetch",
+              }),
             });
             lastMilestone = milestone;
           }
@@ -1096,10 +1388,10 @@ export class BulkOperationDO {
             `/accounts/${this.env.ACCOUNT_ID}/storage/kv/namespaces/${targetNamespaceId}/bulk`,
             this.env,
             {
-              method: 'PUT',
+              method: "PUT",
               body: JSON.stringify(batch),
-              headers: { 'Content-Type': 'application/json' }
-            }
+              headers: { "Content-Type": "application/json" },
+            },
           );
 
           const bulkResponse = await fetch(bulkRequest);
@@ -1107,32 +1399,43 @@ export class BulkOperationDO {
           if (bulkResponse.ok) {
             writeProcessed += batch.length;
           } else {
-            await logError(this.env, `Bulk migrate write failed: ${await bulkResponse.text()}`, createErrorContext('bulk_operation_do', 'process_bulk_migrate'), false);
+            await logError(
+              this.env,
+              `Bulk migrate write failed: ${await bulkResponse.text()}`,
+              createErrorContext("bulk_operation_do", "process_bulk_migrate"),
+              false,
+            );
             errorCount += batch.length;
           }
         } catch (err) {
-          await logError(this.env, err instanceof Error ? err : String(err), createErrorContext('bulk_operation_do', 'process_bulk_migrate', {
-            metadata: { operation: 'batch_write' }
-          }), false);
+          await logError(
+            this.env,
+            err instanceof Error ? err : String(err),
+            createErrorContext("bulk_operation_do", "process_bulk_migrate", {
+              metadata: { operation: "batch_write" },
+            }),
+            false,
+          );
           errorCount += batch.length;
         }
 
         // Update progress (40-70% is writing)
-        const percentage = 40 + Math.round((writeProcessed / migrateData.length) * 30);
+        const percentage =
+          40 + Math.round((writeProcessed / migrateData.length) * 30);
         await this.updateJobInDB(jobId, {
           processed_keys: keys.length,
           error_count: errorCount,
-          percentage
+          percentage,
         });
         this.broadcastProgress({
           jobId,
-          status: 'running',
+          status: "running",
           progress: {
             total: keys.length,
             processed: keys.length,
             errors: errorCount,
-            percentage
-          }
+            percentage,
+          },
         });
 
         // Log milestone
@@ -1140,9 +1443,18 @@ export class BulkOperationDO {
         if (milestone >= 25 && milestone > lastMilestone && milestone < 100) {
           await logJobEvent(db, {
             job_id: jobId,
-            event_type: `progress_${milestone}` as 'progress_25' | 'progress_50' | 'progress_75',
+            event_type: `progress_${milestone}` as
+              | "progress_25"
+              | "progress_50"
+              | "progress_75",
             user_email: userEmail,
-            details: JSON.stringify({ processed: keys.length, written: writeProcessed, errors: errorCount, percentage, phase: 'write' })
+            details: JSON.stringify({
+              processed: keys.length,
+              written: writeProcessed,
+              errors: errorCount,
+              percentage,
+              phase: "write",
+            }),
           });
           lastMilestone = milestone;
         }
@@ -1155,18 +1467,31 @@ export class BulkOperationDO {
           // Get source metadata for migrated keys
           for (const keyName of keys) {
             try {
-              const sourceMetadata = await db.prepare(
-                'SELECT tags, custom_metadata FROM key_metadata WHERE namespace_id = ? AND key_name = ?'
-              ).bind(sourceNamespaceId, keyName).first<{ tags: string; custom_metadata: string }>();
+              const sourceMetadata = await db
+                .prepare(
+                  "SELECT tags, custom_metadata FROM key_metadata WHERE namespace_id = ? AND key_name = ?",
+                )
+                .bind(sourceNamespaceId, keyName)
+                .first<{ tags: string; custom_metadata: string }>();
 
               if (sourceMetadata) {
                 // Upsert to target namespace
-                await db.prepare(`
+                await db
+                  .prepare(
+                    `
                   INSERT INTO key_metadata (namespace_id, key_name, tags, custom_metadata, created_at, updated_at)
                   VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
                   ON CONFLICT(namespace_id, key_name)
                   DO UPDATE SET tags = excluded.tags, custom_metadata = excluded.custom_metadata, updated_at = datetime('now')
-                `).bind(targetNamespaceId, keyName, sourceMetadata.tags, sourceMetadata.custom_metadata).run();
+                `,
+                  )
+                  .bind(
+                    targetNamespaceId,
+                    keyName,
+                    sourceMetadata.tags,
+                    sourceMetadata.custom_metadata,
+                  )
+                  .run();
                 metadataMigrated++;
               }
             } catch {
@@ -1174,15 +1499,22 @@ export class BulkOperationDO {
             }
           }
         } catch (metaErr) {
-          warnings.push(`Metadata migration partially failed: ${metaErr instanceof Error ? metaErr.message : 'Unknown error'}`);
+          warnings.push(
+            `Metadata migration partially failed: ${metaErr instanceof Error ? metaErr.message : "Unknown error"}`,
+          );
         }
 
         // Update progress (70-80% is metadata migration)
         await this.updateJobInDB(jobId, { percentage: 80 });
         this.broadcastProgress({
           jobId,
-          status: 'running',
-          progress: { total: keys.length, processed: keys.length, errors: errorCount, percentage: 80 }
+          status: "running",
+          progress: {
+            total: keys.length,
+            processed: keys.length,
+            errors: errorCount,
+            percentage: 80,
+          },
         });
       }
 
@@ -1194,7 +1526,7 @@ export class BulkOperationDO {
         for (const keyName of keys) {
           const checkRequest = createCfApiRequest(
             `/accounts/${this.env.ACCOUNT_ID}/storage/kv/namespaces/${targetNamespaceId}/metadata/${encodeURIComponent(keyName)}`,
-            this.env
+            this.env,
           );
           const checkResponse = await fetch(checkRequest);
           if (checkResponse.ok) {
@@ -1205,23 +1537,34 @@ export class BulkOperationDO {
         // Verification passes if we successfully wrote at least as many as we fetched (minus errors)
         verificationPassed = targetKeyCount >= writeProcessed;
         if (!verificationPassed) {
-          warnings.push(`Verification warning: expected ${writeProcessed} keys, found ${targetKeyCount}`);
+          warnings.push(
+            `Verification warning: expected ${writeProcessed} keys, found ${targetKeyCount}`,
+          );
         }
       } catch {
-        warnings.push('Verification check failed');
+        warnings.push("Verification check failed");
       }
 
       // Update progress (80-90%)
       await this.updateJobInDB(jobId, { percentage: 90 });
       this.broadcastProgress({
         jobId,
-        status: 'running',
-        progress: { total: keys.length, processed: keys.length, errors: errorCount, percentage: 90 }
+        status: "running",
+        progress: {
+          total: keys.length,
+          processed: keys.length,
+          errors: errorCount,
+          percentage: 90,
+        },
       });
 
       // Step 6: Handle cutover mode (delete source if copy_delete and verification passed)
       let sourceDeleted = false;
-      if (cutoverMode === 'copy_delete' && verificationPassed && errorCount === 0) {
+      if (
+        cutoverMode === "copy_delete" &&
+        verificationPassed &&
+        errorCount === 0
+      ) {
         try {
           // Delete source keys in batches
           for (let i = 0; i < keys.length; i += batchSize) {
@@ -1230,20 +1573,23 @@ export class BulkOperationDO {
               `/accounts/${this.env.ACCOUNT_ID}/storage/kv/namespaces/${sourceNamespaceId}/bulk`,
               this.env,
               {
-                method: 'DELETE',
+                method: "DELETE",
                 body: JSON.stringify(batch),
-                headers: { 'Content-Type': 'application/json' }
-              }
+                headers: { "Content-Type": "application/json" },
+              },
             );
             await fetch(deleteRequest);
 
             // Also delete D1 metadata if migrated
             if (migrateMetadata && db) {
               try {
-                const placeholders = batch.map(() => '?').join(',');
-                await db.prepare(
-                  `DELETE FROM key_metadata WHERE namespace_id = ? AND key_name IN (${placeholders})`
-                ).bind(sourceNamespaceId, ...batch).run();
+                const placeholders = batch.map(() => "?").join(",");
+                await db
+                  .prepare(
+                    `DELETE FROM key_metadata WHERE namespace_id = ? AND key_name IN (${placeholders})`,
+                  )
+                  .bind(sourceNamespaceId, ...batch)
+                  .run();
               } catch {
                 // D1 metadata cleanup failure is non-critical
               }
@@ -1251,44 +1597,55 @@ export class BulkOperationDO {
           }
           sourceDeleted = true;
         } catch (deleteErr) {
-          warnings.push(`Source deletion failed: ${deleteErr instanceof Error ? deleteErr.message : 'Unknown error'}`);
+          warnings.push(
+            `Source deletion failed: ${deleteErr instanceof Error ? deleteErr.message : "Unknown error"}`,
+          );
         }
-      } else if (cutoverMode === 'copy_delete' && (!verificationPassed || errorCount > 0)) {
-        warnings.push('Source keys not deleted due to verification failure or errors');
+      } else if (
+        cutoverMode === "copy_delete" &&
+        (!verificationPassed || errorCount > 0)
+      ) {
+        warnings.push(
+          "Source keys not deleted due to verification failure or errors",
+        );
       }
 
       // Mark as completed
       await this.updateJobInDB(jobId, {
-        status: 'completed',
+        status: "completed",
         processed_keys: writeProcessed,
         error_count: errorCount,
-        percentage: 100
+        percentage: 100,
       });
 
       this.broadcastProgress({
         jobId,
-        status: 'completed',
+        status: "completed",
         progress: {
           total: keys.length,
           processed: writeProcessed,
           errors: errorCount,
-          percentage: 100
+          percentage: 100,
         },
         result: {
           keysMigrated: writeProcessed,
           metadataMigrated,
           errors: errorCount,
-          verification: { passed: verificationPassed, sourceKeyCount: keys.length, targetKeyCount },
+          verification: {
+            passed: verificationPassed,
+            sourceKeyCount: keys.length,
+            targetKeyCount,
+          },
           backupPath,
           sourceDeleted,
-          warnings
-        }
+          warnings,
+        },
       });
 
       // Log completed event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'completed',
+        event_type: "completed",
         user_email: userEmail,
         details: JSON.stringify({
           keysMigrated: writeProcessed,
@@ -1297,14 +1654,14 @@ export class BulkOperationDO {
           verificationPassed,
           sourceDeleted,
           backupPath,
-          warnings
-        })
+          warnings,
+        }),
       });
 
       // Audit log
       await auditLog(db, {
         namespace_id: sourceNamespaceId,
-        operation: 'bulk_migrate',
+        operation: "bulk_migrate",
         user_email: userEmail,
         details: JSON.stringify({
           target_namespace_id: targetNamespaceId,
@@ -1315,33 +1672,43 @@ export class BulkOperationDO {
           cutoverMode,
           sourceDeleted,
           backupPath,
-          job_id: jobId
-        })
+          job_id: jobId,
+        }),
       });
-
     } catch (error) {
-      await logError(this.env, error instanceof Error ? error : String(error), createErrorContext('bulk_operation_do', 'process_bulk_migrate', {
-        namespaceId: sourceNamespaceId,
-        metadata: { jobId }
-      }), false);
+      await logError(
+        this.env,
+        error instanceof Error ? error : String(error),
+        createErrorContext("bulk_operation_do", "process_bulk_migrate", {
+          namespaceId: sourceNamespaceId,
+          metadata: { jobId },
+        }),
+        false,
+      );
 
-      await this.updateJobInDB(jobId, { status: 'failed' });
+      await this.updateJobInDB(jobId, { status: "failed" });
 
       this.broadcastProgress({
         jobId,
-        status: 'failed',
-        progress: { total: keys.length, processed: 0, errors: keys.length, percentage: 0 },
-        error: error instanceof Error ? error.message : 'Unknown error'
+        status: "failed",
+        progress: {
+          total: keys.length,
+          processed: 0,
+          errors: keys.length,
+          percentage: 0,
+        },
+        error: error instanceof Error ? error.message : "Unknown error",
       });
 
       // Log failed event
       await logJobEvent(db, {
         job_id: jobId,
-        event_type: 'failed',
+        event_type: "failed",
         user_email: userEmail,
-        details: JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' })
+        details: JSON.stringify({
+          error: error instanceof Error ? error.message : "Unknown error",
+        }),
       });
     }
   }
 }
-
