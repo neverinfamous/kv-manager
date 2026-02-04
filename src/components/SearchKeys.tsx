@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -31,23 +31,7 @@ export function SearchKeys({
   const [error, setError] = useState("");
   const [searchTriggered, setSearchTriggered] = useState(false);
 
-  // Debounce search
-  useEffect(() => {
-    if (!query && !tagFilter) {
-      setResults([]);
-      setSearchTriggered(false);
-      return;
-    }
-
-    const timer = setTimeout((): void => {
-      performSearch();
-    }, 300);
-
-    return (): void => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, selectedNamespace, tagFilter]);
-
-  const performSearch = async (): Promise<void> => {
+  const performSearch = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       setError("");
@@ -76,7 +60,22 @@ export function SearchKeys({
     } finally {
       setLoading(false);
     }
-  };
+  }, [query, selectedNamespace, tagFilter]);
+
+  // Debounce search
+  useEffect(() => {
+    if (!query && !tagFilter) {
+      setResults([]);
+      setSearchTriggered(false);
+      return;
+    }
+
+    const timer = setTimeout((): void => {
+      performSearch();
+    }, 300);
+
+    return (): void => clearTimeout(timer);
+  }, [query, tagFilter, performSearch]);
 
   const handleNavigate = (result: SearchResult): void => {
     onNavigateToKey?.(result.namespace_id, result.key_name);

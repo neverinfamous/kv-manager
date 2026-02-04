@@ -1,6 +1,6 @@
 # Cloudflare KV Manager
 
-**Last Updated January 27, 2026**
+**Last Updated: February 4, 2026**
 
 [![GitHub](https://img.shields.io/badge/GitHub-neverinfamous/kv--manager-blue?logo=github)](https://github.com/neverinfamous/kv-manager)
 [![Docker Pulls](https://img.shields.io/docker/pulls/writenotenow/kv-manager)](https://hub.docker.com/r/writenotenow/kv-manager)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -32,12 +32,7 @@ export function MetadataEditor({
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isCustomMetadataValid, setIsCustomMetadataValid] = useState(true);
 
-  useEffect(() => {
-    loadMetadata();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [namespaceId, keyName]);
-
-  const loadMetadata = async (): Promise<void> => {
+  const loadMetadata = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       setError("");
@@ -54,7 +49,11 @@ export function MetadataEditor({
     } finally {
       setLoading(false);
     }
-  };
+  }, [namespaceId, keyName]);
+
+  useEffect(() => {
+    loadMetadata();
+  }, [loadMetadata]);
 
   const handleAddTag = (): void => {
     const tag = newTag.trim();

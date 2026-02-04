@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
@@ -78,120 +78,124 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
     return (): void => clearTimeout(timer);
   }, [jobIdInput]);
 
-  const loadJobs = async (reset = false): Promise<void> => {
-    try {
-      setLoading(true);
-      setError("");
+  const loadJobs = useCallback(
+    async (reset = false): Promise<void> => {
+      try {
+        setLoading(true);
+        setError("");
 
-      const currentOffset = reset ? 0 : offset;
-      const options: {
-        limit: number;
-        offset: number;
-        status?: string;
-        operation_type?: string;
-        namespace_id?: string;
-        start_date?: string;
-        end_date?: string;
-        job_id?: string;
-        min_errors?: number;
-        sort_by?: string;
-        sort_order?: "asc" | "desc";
-      } = {
-        limit,
-        offset: currentOffset,
-      };
+        const currentOffset = reset ? 0 : offset;
+        const options: {
+          limit: number;
+          offset: number;
+          status?: string;
+          operation_type?: string;
+          namespace_id?: string;
+          start_date?: string;
+          end_date?: string;
+          job_id?: string;
+          min_errors?: number;
+          sort_by?: string;
+          sort_order?: "asc" | "desc";
+        } = {
+          limit,
+          offset: currentOffset,
+        };
 
-      if (statusFilter !== "all") {
-        options.status = statusFilter;
-      }
-
-      if (operationFilter !== "all") {
-        options.operation_type = operationFilter;
-      }
-
-      if (namespaceFilter !== "all") {
-        options.namespace_id = namespaceFilter;
-      }
-
-      // Handle date range based on preset or custom selection
-      if (datePreset !== "all" && datePreset !== "custom") {
-        const now = new Date();
-        let startDate: Date;
-
-        switch (datePreset) {
-          case "24h":
-            startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-            break;
-          case "7d":
-            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-            break;
-          case "30d":
-            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-            break;
-          default:
-            startDate = now;
+        if (statusFilter !== "all") {
+          options.status = statusFilter;
         }
 
-        options.start_date = startDate.toISOString();
-      } else if (datePreset === "custom") {
-        if (dateRange.from) {
-          options.start_date = dateRange.from.toISOString();
+        if (operationFilter !== "all") {
+          options.operation_type = operationFilter;
         }
-        if (dateRange.to) {
-          // Set to end of day
-          const endDate = new Date(dateRange.to);
-          endDate.setHours(23, 59, 59, 999);
-          options.end_date = endDate.toISOString();
+
+        if (namespaceFilter !== "all") {
+          options.namespace_id = namespaceFilter;
         }
+
+        // Handle date range based on preset or custom selection
+        if (datePreset !== "all" && datePreset !== "custom") {
+          const now = new Date();
+          let startDate: Date;
+
+          switch (datePreset) {
+            case "24h":
+              startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+              break;
+            case "7d":
+              startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+              break;
+            case "30d":
+              startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+              break;
+            default:
+              startDate = now;
+          }
+
+          options.start_date = startDate.toISOString();
+        } else if (datePreset === "custom") {
+          if (dateRange.from) {
+            options.start_date = dateRange.from.toISOString();
+          }
+          if (dateRange.to) {
+            // Set to end of day
+            const endDate = new Date(dateRange.to);
+            endDate.setHours(23, 59, 59, 999);
+            options.end_date = endDate.toISOString();
+          }
+        }
+
+        if (jobIdSearch.trim()) {
+          options.job_id = jobIdSearch.trim();
+        }
+
+        if (minErrors.trim() && !isNaN(parseInt(minErrors))) {
+          options.min_errors = parseInt(minErrors);
+        }
+
+        options.sort_by = sortBy;
+        options.sort_order = sortOrder;
+
+        const data = await api.getJobList(options);
+
+        if (reset) {
+          setJobs(data.jobs);
+          setOffset(limit);
+        } else {
+          setJobs((prevJobs) => [...prevJobs, ...data.jobs]);
+          setOffset(currentOffset + limit);
+        }
+
+        setTotal(data.total);
+      } catch (err) {
+        logger.error("Failed to load job history", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to load job history",
+        );
+      } finally {
+        setLoading(false);
       }
-
-      if (jobIdSearch.trim()) {
-        options.job_id = jobIdSearch.trim();
-      }
-
-      if (minErrors.trim() && !isNaN(parseInt(minErrors))) {
-        options.min_errors = parseInt(minErrors);
-      }
-
-      options.sort_by = sortBy;
-      options.sort_order = sortOrder;
-
-      const data = await api.getJobList(options);
-
-      if (reset) {
-        setJobs(data.jobs);
-        setOffset(limit);
-      } else {
-        setJobs([...jobs, ...data.jobs]);
-        setOffset(currentOffset + limit);
-      }
-
-      setTotal(data.total);
-    } catch (err) {
-      logger.error("Failed to load job history", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to load job history",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [
+      statusFilter,
+      operationFilter,
+      namespaceFilter,
+      datePreset,
+      dateRange.from,
+      dateRange.to,
+      jobIdSearch,
+      minErrors,
+      sortBy,
+      sortOrder,
+      offset,
+      limit,
+    ],
+  );
 
   useEffect(() => {
     loadJobs(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    statusFilter,
-    operationFilter,
-    namespaceFilter,
-    datePreset,
-    dateRange.from,
-    dateRange.to,
-    jobIdSearch,
-    minErrors,
-    sortBy,
-    sortOrder,
-  ]);
+  }, [loadJobs]);
 
   const handleLoadMore = (): void => {
     loadJobs(false);

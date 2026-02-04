@@ -5,7 +5,8 @@ import { bulkJobLogger } from "../lib/logger";
 
 interface UseBulkJobProgressOptions {
   jobId: string;
-  wsUrl: string;
+  /** @deprecated wsUrl is no longer used (polling only) but kept for API compatibility */
+  wsUrl?: string;
   onComplete?: (result: JobProgress) => void;
   onError?: (error: string) => void;
 }
@@ -244,8 +245,6 @@ function subscribeToJob(
  */
 export function useBulkJobProgress({
   jobId,
-  // @ts-expect-error - wsUrl kept for API compatibility but not used (polling only)
-  wsUrl, // eslint-disable-line @typescript-eslint/no-unused-vars
   onComplete,
   onError,
 }: UseBulkJobProgressOptions): UseBulkJobProgressReturn {

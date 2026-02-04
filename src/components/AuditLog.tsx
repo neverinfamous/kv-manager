@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import {
@@ -44,6 +44,50 @@ export function AuditLog({
   const [offset, setOffset] = useState(0);
   const limit = 50;
 
+  const loadLogs = useCallback(
+    async (reset = false): Promise<void> => {
+      if (viewMode === "namespace" && !selectedNamespace) return;
+
+      try {
+        setLoading(true);
+        setError("");
+
+        const currentOffset = reset ? 0 : offset;
+        const options: { limit: number; offset: number; operation?: string } = {
+          limit,
+          offset: currentOffset,
+        };
+
+        if (operationFilter !== "all") {
+          options.operation = operationFilter;
+        }
+
+        const data = await api.getAuditLog(selectedNamespace, options);
+
+        if (reset) {
+          setLogs(data as unknown as AuditEntry[]);
+          setOffset(limit);
+        } else {
+          setLogs((prevLogs) => [
+            ...prevLogs,
+            ...(data as unknown as AuditEntry[]),
+          ]);
+          setOffset(currentOffset + limit);
+        }
+
+        setHasMore(data.length === limit);
+      } catch (err) {
+        logger.error("Failed to load audit log", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to load audit log",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [viewMode, selectedNamespace, operationFilter, offset, limit],
+  );
+
   useEffect(() => {
     if (selectedNamespaceId) {
       setSelectedNamespace(selectedNamespaceId);
@@ -55,44 +99,7 @@ export function AuditLog({
     if (viewMode === "namespace" && selectedNamespace) {
       loadLogs(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode, selectedNamespace, operationFilter]);
-
-  const loadLogs = async (reset = false): Promise<void> => {
-    if (viewMode === "namespace" && !selectedNamespace) return;
-
-    try {
-      setLoading(true);
-      setError("");
-
-      const currentOffset = reset ? 0 : offset;
-      const options: { limit: number; offset: number; operation?: string } = {
-        limit,
-        offset: currentOffset,
-      };
-
-      if (operationFilter !== "all") {
-        options.operation = operationFilter;
-      }
-
-      const data = await api.getAuditLog(selectedNamespace, options);
-
-      if (reset) {
-        setLogs(data as unknown as AuditEntry[]);
-        setOffset(limit);
-      } else {
-        setLogs([...logs, ...(data as unknown as AuditEntry[])]);
-        setOffset(currentOffset + limit);
-      }
-
-      setHasMore(data.length === limit);
-    } catch (err) {
-      logger.error("Failed to load audit log", err);
-      setError(err instanceof Error ? err.message : "Failed to load audit log");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [viewMode, selectedNamespace, operationFilter, loadLogs]);
 
   const handleLoadMore = (): void => {
     loadLogs(false);

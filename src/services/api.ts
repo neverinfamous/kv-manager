@@ -31,8 +31,7 @@ interface CacheEntry<T> {
 const cache = new Map<string, CacheEntry<unknown>>();
 
 // Track in-flight requests for deduplication
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const inFlightRequests = new Map<string, Promise<any>>();
+const inFlightRequests = new Map<string, Promise<unknown>>();
 
 /**
  * Deduplicate concurrent requests for the same key

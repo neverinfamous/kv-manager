@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -31,14 +31,7 @@ export function JobHistoryDialog({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (open && jobId) {
-      loadEvents();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, jobId]);
-
-  const loadEvents = async (): Promise<void> => {
+  const loadEvents = useCallback(async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);
@@ -51,7 +44,13 @@ export function JobHistoryDialog({
     } finally {
       setLoading(false);
     }
-  };
+  }, [jobId]);
+
+  useEffect(() => {
+    if (open && jobId) {
+      loadEvents();
+    }
+  }, [open, jobId, loadEvents]);
 
   const getEventIcon = (eventType: string): React.JSX.Element => {
     switch (eventType) {

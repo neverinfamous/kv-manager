@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { logger } from "../lib/logger";
 
 export type NamespaceViewMode = "grid" | "list";
@@ -33,14 +33,7 @@ export function useNamespaceViewPreference(): UseNamespaceViewPreferenceReturn {
   const [viewMode, setViewModeState] =
     useState<NamespaceViewMode>(getStoredViewMode);
 
-  // Sync with localStorage on mount (handles SSR hydration)
-  useEffect(() => {
-    const stored = getStoredViewMode();
-    if (stored !== viewMode) {
-      setViewModeState(stored);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Note: SSR hydration sync happens via useState initializer (getStoredViewMode)
 
   const setViewMode = useCallback((mode: NamespaceViewMode): void => {
     setViewModeState(mode);

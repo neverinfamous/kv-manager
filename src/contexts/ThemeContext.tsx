@@ -1,24 +1,9 @@
-/* eslint-disable react-refresh/only-export-components */
-import React, {
-  createContext,
-  useEffect,
-  useState,
-  ReactNode,
-  useMemo,
-} from "react";
-
-export type ThemeMode = "light" | "dark" | "system";
-export type ResolvedTheme = "light" | "dark";
-
-interface ThemeContextType {
-  theme: ThemeMode;
-  resolvedTheme: ResolvedTheme;
-  setTheme: (theme: ThemeMode) => void;
-}
-
-export const ThemeContext = createContext<ThemeContextType | undefined>(
-  undefined,
-);
+import React, { useEffect, useState, useMemo, ReactNode } from "react";
+import {
+  ThemeContext,
+  type ThemeMode,
+  type ResolvedTheme,
+} from "./theme-context-types";
 
 const STORAGE_KEY = "kv-manager-theme";
 
