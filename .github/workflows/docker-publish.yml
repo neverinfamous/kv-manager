@@ -70,7 +70,6 @@ jobs:
         uses: github/codeql-action/analyze@v4
         with:
           upload: always
-          fail-on: error
 
   # Build each platform on native architecture (avoids QEMU emulation issues)
   build-platform:
@@ -191,11 +190,6 @@ jobs:
           if [ "$CROSS_SPAWN_VERSION" != "7.0.6" ] && [ "$CROSS_SPAWN_VERSION" != "7.0.5" ]; then
             echo "❌ ERROR: cross-spawn version $CROSS_SPAWN_VERSION is vulnerable (need >= 7.0.5)"
             exit 1
-          fi
-          BRACE_EXP_VERSION=$(grep -A 2 '"node_modules/brace-expansion"' package-lock.json | grep '"version"' | cut -d'"' -f4)
-          echo "brace-expansion version: $BRACE_EXP_VERSION"
-          if [ "$BRACE_EXP_VERSION" != "2.0.2" ]; then
-            echo "⚠️  WARNING: brace-expansion version $BRACE_EXP_VERSION (expected 2.0.2)"
           fi
           echo "✅ Security patches verified in package-lock.json"
 

@@ -1,6 +1,6 @@
 # KV Manager - Docker Edition
 
-**Last Updated February 10, 2026**
+**Last Updated February 23, 2026**
 
 [![GitHub](https://img.shields.io/badge/GitHub-neverinfamous/kv--manager-blue?logo=github)](https://github.com/neverinfamous/kv-manager)
 [![Docker Pulls](https://img.shields.io/docker/pulls/writenotenow/kv-manager)](https://hub.docker.com/r/writenotenow/kv-manager)
@@ -17,7 +17,7 @@ A full-featured management platform for Cloudflare Workers KV, designed for engi
 
 ## Tech Stack
 
-**Frontend**: React 19.2.4 | TypeScript 5.9.3 | Vite 7.3.1 | Tailwind CSS 4.1.17 | shadcn/ui
+**Frontend**: React 19.2.4 | TypeScript 5.9.3 | Vite 7.3.1 | Tailwind CSS 4.2.0 | shadcn/ui
 
 **Backend**: Cloudflare Workers + KV + D1 + R2 + Durable Objects + Zero Trust
 
