@@ -15,21 +15,28 @@ WORKDIR /app
 # Upgrade npm to latest version to fix CVE-2024-21538 (cross-spawn vulnerability)
 RUN npm install -g npm@latest
 
-# Patch npm's own dependencies to fix CVE-2025-64756 (glob) and CVE-2025-64118 (tar)
-# npm@11.6.2 bundles vulnerable versions glob@11.0.3, glob@10.4.5 (in node-gyp), and tar@7.5.1
+# Patch npm's own bundled dependencies:
+# - CVE-2025-64756 (glob): npm bundles vulnerable glob@11.0.3 and glob@10.4.5 (in node-gyp)
+# - CVE-2025-64118 (tar): npm bundles vulnerable tar@7.5.1
+# - GHSA-7r86-cg39-jmmj (minimatch ReDoS): npm bundles vulnerable minimatch@10.2.2
 # We download patched versions first, then replace all vulnerable ones
 RUN cd /tmp && \
     npm pack glob@11.1.0 && \
     npm pack tar@7.5.2 && \
+    npm pack minimatch@10.2.4 && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/glob && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/tar && \
+    rm -rf /usr/local/lib/node_modules/npm/node_modules/minimatch && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules/glob && \
     tar -xzf glob-11.1.0.tgz && \
     cp -r package /usr/local/lib/node_modules/npm/node_modules/glob && \
     mkdir -p /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules && \
     cp -r package /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules/glob && \
+    rm -rf package && \
     tar -xzf tar-7.5.2.tgz && \
     mv package /usr/local/lib/node_modules/npm/node_modules/tar && \
+    tar -xzf minimatch-10.2.4.tgz && \
+    mv package /usr/local/lib/node_modules/npm/node_modules/minimatch && \
     rm -rf /tmp/*
 
 # Install build dependencies
@@ -69,8 +76,12 @@ FROM node:24-alpine AS runtime
 
 WORKDIR /app
 
-# Upgrade npm to latest version
-RUN npm install -g npm@latest
+# Upgrade npm to latest version and patch its bundled minimatch (GHSA-7r86-cg39-jmmj ReDoS)
+RUN npm install -g npm@latest && \
+    cd /tmp && npm pack minimatch@10.2.4 && tar -xzf minimatch-10.2.4.tgz && \
+    rm -rf /usr/local/lib/node_modules/npm/node_modules/minimatch && \
+    mv package /usr/local/lib/node_modules/npm/node_modules/minimatch && \
+    rm -rf /tmp/*
 
 # Install wrangler globally with security patches for its bundled dependencies
 # Wrangler bundles vulnerable versions of glob, cross-spawn, and brace-expansion
