@@ -1,11 +1,11 @@
 # KV Manager - Docker Edition
 
-**Last Updated March 1, 2026**
+**Last Updated March 7, 2026**
 
 [![GitHub](https://img.shields.io/badge/GitHub-neverinfamous/kv--manager-blue?logo=github)](https://github.com/neverinfamous/kv-manager)
 [![Docker Pulls](https://img.shields.io/docker/pulls/writenotenow/kv-manager)](https://hub.docker.com/r/writenotenow/kv-manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-![Version](https://img.shields.io/badge/version-v2.2.0-green)
+![Version](https://img.shields.io/badge/version-v2.2.2-green)
 ![Status](https://img.shields.io/badge/status-Production%2FStable-brightgreen)
 [![Security](https://img.shields.io/badge/Security-Enhanced-green.svg)](https://github.com/neverinfamous/kv-manager/blob/main/SECURITY.md)
 [![CodeQL](https://img.shields.io/badge/CodeQL-Passing-brightgreen.svg)](https://github.com/neverinfamous/kv-manager/security/code-scanning)
@@ -124,7 +124,7 @@ docker compose up -d  # or docker stop/rm/run
 ```yaml
 services:
   kv-manager:
-    image: writenotenow/kv-manager:2.2.0
+    image: writenotenow/kv-manager:2.2.2
 ```
 
 ## 📦 Image Details
@@ -135,7 +135,7 @@ services:
 - **User:** Non-root
 - **Health:** `/health` endpoint
 
-**Available tags:** `latest`, `2.2.0`, `sha-XXXXXX`
+**Available tags:** `latest`, `2.2.2`, `sha-XXXXXX`
 
 ## 📚 Resources
 
