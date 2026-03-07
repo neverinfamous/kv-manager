@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.3] - 2026-03-07
+
 ### Documentation
 
 - **Changelog Migrated:** Moved `Changelog.md` from the wiki repository into the main project root as `CHANGELOG.md`.
+
+### CI/CD
+
+- **Docker Hub Description Fix:** Fixed `Update Docker Hub Description` and `Deployment Summary` steps in `docker-publish.yml` to trigger on tag pushes (`startsWith(github.ref, 'refs/tags/v')`) instead of branch pushes (`refs/heads/main`), which never matched since the workflow only triggers on tag pushes.
 
 ## [2.2.2] - 2026-03-07
 

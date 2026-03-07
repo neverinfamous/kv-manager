@@ -1,7 +1,7 @@
 {
   "name": "kv-manager",
   "private": true,
-  "version": "2.2.2",
+  "version": "2.2.3",
   "type": "module",
   "engines": {
     "node": ">=24.0.0"
