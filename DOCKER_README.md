@@ -13,7 +13,7 @@
 
 A full-featured management platform for Cloudflare Workers KV, designed for engineering teams and large-scale workloads. Browse namespaces, run bulk operations, search across your entire KV footprint, manage metadata and tags, automate backups to R2, and secure everything with Cloudflare Access Zero Trust.
 
-**[Live Demo](https://kv.adamic.tech/)** • **[GitHub](https://github.com/neverinfamous/kv-manager)** • **[Wiki](https://github.com/neverinfamous/kv-manager/wiki)** • **[Changelog](https://github.com/neverinfamous/kv-manager/wiki/Changelog)** • **[Release Article](https://adamic.tech/articles/kv-manager)**
+**[Live Demo](https://kv.adamic.tech/)** • **[GitHub](https://github.com/neverinfamous/kv-manager)** • **[Wiki](https://github.com/neverinfamous/kv-manager/wiki)** • **[Changelog](https://github.com/neverinfamous/kv-manager/blob/main/CHANGELOG.md)** • **[Release Article](https://adamic.tech/articles/kv-manager)**
 
 ## Tech Stack
 
