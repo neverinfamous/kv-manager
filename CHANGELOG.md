@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.4] - 2026-03-10
+
 ### Changed
 
 - **Dependency Updates**
@@ -17,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `wrangler`: 4.71.0 → 4.72.0 (minor)
   - `tar` override: 7.5.10 → 7.5.11 (patch) — npm + Docker layers
   - GitHub Actions: `docker/setup-buildx-action` (v3 → v4), `docker/login-action` (v3 → v4), `docker/metadata-action` (v5 → v6), `docker/build-push-action` (v6 → v7)
+
+### Fixed
+
+- **Empty Vendor Chunk**: Removed `vendor-react` manual chunk from Vite config — Vite 7's automatic JSX runtime inlines React during transform, making the separate chunk empty (0 bytes)
 
 ## [2.2.3] - 2026-03-07
 
