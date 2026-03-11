@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Dependency Updates**
+  - `@cloudflare/workers-types`: 4.20260307.1 → 4.20260310.1 (patch)
+  - `@types/node`: 25.3.5 → 25.4.0 (minor)
+  - `jose`: 6.2.0 → 6.2.1 (patch)
+  - `typescript-eslint`: 8.56.1 → 8.57.0 (minor)
+  - `wrangler`: 4.71.0 → 4.72.0 (minor)
+  - `tar` override: 7.5.10 → 7.5.11 (patch) — npm + Docker layers
+  - GitHub Actions: `docker/setup-buildx-action` (v3 → v4), `docker/login-action` (v3 → v4), `docker/metadata-action` (v5 → v6), `docker/build-push-action` (v6 → v7)
+
 ## [2.2.3] - 2026-03-07
 
 ### Documentation

@@ -22,7 +22,7 @@ RUN npm install -g npm@latest
 # We download patched versions first, then replace all vulnerable ones
 RUN cd /tmp && \
     npm pack glob@11.1.0 && \
-    npm pack tar@7.5.10 && \
+    npm pack tar@7.5.11 && \
     npm pack minimatch@10.2.4 && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/glob && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/tar && \
@@ -33,7 +33,7 @@ RUN cd /tmp && \
     mkdir -p /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules && \
     cp -r package /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules/glob && \
     rm -rf package && \
-    tar -xzf tar-7.5.10.tgz && \
+    tar -xzf tar-7.5.11.tgz && \
     mv package /usr/local/lib/node_modules/npm/node_modules/tar && \
     tar -xzf minimatch-10.2.4.tgz && \
     mv package /usr/local/lib/node_modules/npm/node_modules/minimatch && \

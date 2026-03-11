@@ -65,7 +65,7 @@
     "cross-spawn": "7.0.6",
     "glob": "11.1.0",
     "minimatch": "10.2.4",
-    "tar": "7.5.10",
+    "tar": "7.5.11",
     "eslint-plugin-react-hooks": {
       "eslint": "$eslint"
     }
