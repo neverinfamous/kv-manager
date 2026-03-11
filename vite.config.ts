@@ -14,8 +14,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // React core
-          "vendor-react": ["react", "react-dom"],
           // UI components (Radix primitives)
           "vendor-radix": [
             "@radix-ui/react-accordion",
