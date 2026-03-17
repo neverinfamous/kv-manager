@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
-- Added exact version override for `undici` to resolve multiple high severity vulnerabilities:
+- Added exact version override for `undici` to resolve multiple high-severity vulnerabilities:
   - GHSA-f269-vfmq-vjvj: Malicious WebSocket 64-bit length overflows parser and crashes the client
   - GHSA-2mjp-6q6p-2qxm: HTTP Request/Response Smuggling issue
   - GHSA-4992-7rv2-5pvq: CRLF Injection in undici via `upgrade` option
