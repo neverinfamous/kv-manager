@@ -13,26 +13,11 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // UI components (Radix primitives)
-          "vendor-radix": [
-            "@radix-ui/react-accordion",
-            "@radix-ui/react-checkbox",
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-dropdown-menu",
-            "@radix-ui/react-label",
-            "@radix-ui/react-popover",
-            "@radix-ui/react-progress",
-            "@radix-ui/react-select",
-            "@radix-ui/react-slot",
-            "@radix-ui/react-tabs",
-          ],
-          // Icons
-          "vendor-icons": ["lucide-react"],
-          // Date utilities
-          "vendor-date": ["date-fns", "react-day-picker"],
-          // Other utilities
-          "vendor-utils": ["class-variance-authority", "jszip", "jose"],
+        manualChunks: (id: string) => {
+          if (id.includes("@radix-ui/")) return "vendor-radix";
+          if (id.includes("lucide-react")) return "vendor-icons";
+          if (id.includes("date-fns") || id.includes("react-day-picker")) return "vendor-date";
+          if (id.includes("class-variance-authority") || id.includes("jszip") || id.includes("jose")) return "vendor-utils";
         },
       },
     },
