@@ -3,7 +3,7 @@
 [![GitHub](https://img.shields.io/badge/GitHub-neverinfamous/kv--manager-blue?logo=github)](https://github.com/neverinfamous/kv-manager)
 [![Docker Pulls](https://img.shields.io/docker/pulls/writenotenow/kv-manager)](https://hub.docker.com/r/writenotenow/kv-manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-![Version](https://img.shields.io/badge/version-v2.2.5-green)
+[![Version](https://img.shields.io/github/v/release/neverinfamous/kv-manager?label=version&color=green)](https://github.com/neverinfamous/kv-manager/releases)
 ![Status](https://img.shields.io/badge/status-Production%2FStable-brightgreen)
 [![Security](https://img.shields.io/badge/Security-Enhanced-green.svg)](https://github.com/neverinfamous/kv-manager/blob/main/SECURITY.md)
 [![CodeQL](https://img.shields.io/badge/CodeQL-Passing-brightgreen.svg)](https://github.com/neverinfamous/kv-manager/security/code-scanning)
@@ -122,7 +122,7 @@ docker compose up -d  # or docker stop/rm/run
 ```yaml
 services:
   kv-manager:
-    image: writenotenow/kv-manager:v2.2.5
+    image: writenotenow/kv-manager:<version>  # see https://github.com/neverinfamous/kv-manager/releases
 ```
 
 ## 📦 Image Details
@@ -133,7 +133,7 @@ services:
 - **User:** Non-root
 - **Health:** `/health` endpoint
 
-**Available tags:** `latest`, `v2.2.5`, `sha-XXXXXX`
+**Available tags:** `latest`, `v<version>` (see [releases](https://github.com/neverinfamous/kv-manager/releases)), `sha-XXXXXX`
 
 ## 📚 Resources
 
