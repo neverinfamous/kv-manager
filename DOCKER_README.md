@@ -122,7 +122,7 @@ docker compose up -d  # or docker stop/rm/run
 ```yaml
 services:
   kv-manager:
-    image: writenotenow/kv-manager:<version>  # see https://github.com/neverinfamous/kv-manager/releases
+    image: writenotenow/kv-manager:<version> # see https://github.com/neverinfamous/kv-manager/releases
 ```
 
 ## 📦 Image Details
