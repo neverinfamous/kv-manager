@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased](https://github.com/neverinfamous/kv-manager/compare/v2.2.5...HEAD)
 
+### Security
+
+- Fixed `picomatch` Method Injection vulnerability via exact pins and Docker build layer patching
+- Fixed `flatted` Prototype Pollution vulnerability via exact pins
+- Fixed `brace-expansion` DoS vulnerability
+
+### Changed
+
+- Bumped `vite` to `8.0.5`, `eslint` to `10.2.0`, `wrangler` to `4.80.0`, `lucide-react` to `1.7.0`, `jose` to `6.2.2`
+- Updated `@cloudflare/workers-types`, `@types/node`, `@tailwindcss/postcss`, `tailwindcss`, `typescript`, `typescript-eslint`
+
 ## [2.2.5](https://github.com/neverinfamous/kv-manager/releases/tag/v2.2.5) - 2026-03-17
 
 ### Changed
@@ -26,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - GHSA-v9p9-hfj2-hcw8: Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation
   - GHSA-phc3-fgpg-7m6h: Unbounded Memory Consumption in its DeduplicationHandler via Response Buffering
 
-## [2.2.4] - 2026-03-10
+## [2.2.4](https://github.com/neverinfamous/kv-manager/releases/tag/v2.2.4) - 2026-03-10
 
 ### Changed
 
@@ -43,19 +54,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Empty Vendor Chunk**: Removed `vendor-react` manual chunk from Vite config — Vite 7's automatic JSX runtime inlines React during transform, making the separate chunk empty (0 bytes)
 
-## [2.2.3] - 2026-03-07
+## [2.2.3](https://github.com/neverinfamous/kv-manager/releases/tag/v2.2.3) - 2026-03-07
 
-### Documentation
+### Changed
 
 - **Changelog Migrated:** Moved `Changelog.md` from the wiki repository into the main project root as `CHANGELOG.md`.
-
-### CI/CD
-
 - **Docker Hub Description Fix:** Fixed `Update Docker Hub Description` and `Deployment Summary` steps in `docker-publish.yml` to trigger on tag pushes (`startsWith(github.ref, 'refs/tags/v')`) instead of branch pushes (`refs/heads/main`), which never matched since the workflow only triggers on tag pushes.
 
-## [2.2.2] - 2026-03-07
+## [2.2.2](https://github.com/neverinfamous/kv-manager/releases/tag/v2.2.2) - 2026-03-07
 
-### Dependencies
+### Changed
 
 - **lucide-react**: Updated 0.575.0 → 0.577.0
 
@@ -618,7 +626,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All migrations are idempotent and safe to run multiple times
   - Migration guide provided at [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)
 
-### Technical Improvements
+### Changed
 
 - **TypeScript Types**: Updated `ImportParams` interface to support dual metadata system
   - Clarified `metadata` field for KV native metadata
@@ -836,7 +844,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Kubernetes deployment examples
 - Reverse proxy configurations (Nginx, Traefik, Caddy)
 
-### Technical
+### Added
 
 - React 19.2.0 + TypeScript 5.9.3 frontend
 - Vite 7.1.12 build system
@@ -849,10 +857,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CORS configuration for local development
 
 ---
-
-## Links
-
-- [GitHub Repository](https://github.com/neverinfamous/kv-manager)
-- [Docker Hub](https://hub.docker.com/r/writenotenow/kv-manager)
-- [Live Demo](https://kv.adamic.tech/)
-- [Release Article](https://adamic.tech/articles/2025-11-05-kv-manager-v1-0-0)

@@ -27,12 +27,12 @@ A full-featured management platform for Cloudflare Workers KV, designed for engi
 - **🏷️ Tag Organization** - Unlimited tags stored in D1 for easy filtering and search
 - **🔍 Advanced Search** - Cross-namespace search by key name, tags, and custom metadata
 - **⚡ Bulk Operations** - Process thousands of keys efficiently (delete, copy, TTL, tags)
-- **🔄 NEW! Cross-Namespace Migration** - Migrate keys between namespaces with TTL preservation, metadata migration, and rollback support
+- **🔄 Cross-Namespace Migration** - Migrate keys between namespaces with TTL preservation, metadata migration, and rollback support
 - **📥 Import/Export** - JSON/NDJSON support with collision handling
 - **☁️ R2 Backup & Restore** - Cloud-native backup with batch operations
 - **📈 Job History** - Complete audit trail with event timelines and advanced filtering
 - **📊 Metrics Dashboard** - View KV analytics, operation counts, and latency percentiles
-- **🏥 NEW! Health Dashboard** - At-a-glance operational status with health score, job history, and backup coverage
+- **🏥 Health Dashboard** - At-a-glance operational status with health score, job history, and backup coverage
 - **🔔 Webhooks** - Event-driven HTTP notifications for key operations, bulk jobs, and failures
 - **🔐 Enterprise Auth** - Cloudflare Access (Zero Trust) integration
 - **🎨 Modern UI** - Dark/light themes, responsive design, built with React + Tailwind CSS
