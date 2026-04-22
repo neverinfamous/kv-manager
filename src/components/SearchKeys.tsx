@@ -65,8 +65,10 @@ export function SearchKeys({
   // Debounce search
   useEffect(() => {
     if (!query && !tagFilter) {
-      setResults([]);
-      setSearchTriggered(false);
+      queueMicrotask(() => {
+        setResults([]);
+        setSearchTriggered(false);
+      });
       return;
     }
 

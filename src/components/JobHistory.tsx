@@ -194,7 +194,9 @@ export function JobHistory({ namespaces }: JobHistoryProps): React.JSX.Element {
   );
 
   useEffect(() => {
-    loadJobs(true);
+    queueMicrotask(() => {
+      void loadJobs(true);
+    });
   }, [loadJobs]);
 
   const handleLoadMore = (): void => {

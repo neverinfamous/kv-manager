@@ -93,7 +93,9 @@ export function KVMetrics({ namespaces }: KVMetricsProps): React.JSX.Element {
 
   // Load metrics when filters change
   useEffect(() => {
-    loadMetrics();
+    queueMicrotask(() => {
+      void loadMetrics();
+    });
   }, [loadMetrics]);
 
   const handleRefresh = (): void => {

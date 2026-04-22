@@ -245,13 +245,6 @@ export default function App(): React.JSX.Element {
   // Cross-namespace migration dialog state
   const [showMigrateDialog, setShowMigrateDialog] = useState(false);
 
-  // Check migration status and load namespaces on mount
-  useEffect(() => {
-    loadNamespaces();
-    loadNamespaceColors();
-    checkMigrationStatus();
-  }, []);
-
   // Check migration status
   const checkMigrationStatus = async (): Promise<void> => {
     try {
@@ -325,6 +318,15 @@ export default function App(): React.JSX.Element {
       // Silently handle color loading failures
     }
   };
+
+  // Check migration status and load namespaces on mount
+  useEffect(() => {
+    queueMicrotask(() => {
+      void loadNamespaces();
+      void loadNamespaceColors();
+      void checkMigrationStatus();
+    });
+  }, []);
 
   const handleColorChange = async (
     namespaceId: string,
@@ -740,9 +742,11 @@ export default function App(): React.JSX.Element {
   // Load keys when viewing a namespace
   useEffect(() => {
     if (currentView.type === "namespace") {
-      setKeysCursor(undefined);
-      setKeysListComplete(true);
-      loadKeys(currentView.namespaceId);
+      queueMicrotask(() => {
+        setKeysCursor(undefined);
+        setKeysListComplete(true);
+        void loadKeys(currentView.namespaceId);
+      });
       // Also load key colors
       void (async (): Promise<void> => {
         try {
@@ -754,12 +758,14 @@ export default function App(): React.JSX.Element {
         }
       })();
     } else {
-      setKeys([]);
-      setSelectedKeys([]);
-      setKeyPrefix("");
-      setKeysCursor(undefined);
-      setKeysListComplete(true);
-      setKeyColors({});
+      queueMicrotask(() => {
+        setKeys([]);
+        setSelectedKeys([]);
+        setKeyPrefix("");
+        setKeysCursor(undefined);
+        setKeysListComplete(true);
+        setKeyColors({});
+      });
     }
   }, [currentView, keyPrefix, loadKeys]);
 

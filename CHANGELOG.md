@@ -5,7 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/neverinfamous/kv-manager/compare/v2.2.6...HEAD)
+## [Unreleased](https://github.com/neverinfamous/kv-manager/compare/v2.2.7...HEAD)
+
+## [2.2.7](https://github.com/neverinfamous/kv-manager/compare/v2.2.6...v2.2.7) - 2026-04-22
+
+### Fixed
+
+- Resolved ESLint `react-hooks/set-state-in-effect` cascading render violations across multiple components (`App`, `AuditLog`, `HealthDashboard`, `JobHistory`, `KeyEditorDialog`, etc.) by wrapping synchronous state updates inside `useEffect` with `queueMicrotask`.
+- Fixed `react-hooks/immutability` errors in `App.tsx` by reordering function declarations.
+
+### Changed
+
+- **Dependency Updates**
+  - Updated React and React DOM to 19.2.5
+  - Updated Tailwind CSS to 4.2.4
+  - Updated Vite to 8.0.9
+  - Updated Wrangler to 4.84.1
+  - Updated PostCSS to 8.5.10
+  - Updated `lucide-react` to 1.8.0
+  - Updated `@cloudflare/workers-types` to 4.20260422.1
+  - Updated `@types/node` to 25.6.0
+  - Updated Dockerfile and package.json overrides for `tar` (7.5.13) and `minimatch` (10.2.5)
 
 ## [2.2.6](https://github.com/neverinfamous/kv-manager/compare/v2.2.5...v2.2.6) - 2026-04-06
 

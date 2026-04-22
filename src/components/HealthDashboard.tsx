@@ -49,7 +49,9 @@ export function HealthDashboard(): React.JSX.Element {
   }, []);
 
   useEffect(() => {
-    loadHealth();
+    queueMicrotask(() => {
+      void loadHealth();
+    });
   }, [loadHealth]);
 
   const handleRefresh = (): void => {

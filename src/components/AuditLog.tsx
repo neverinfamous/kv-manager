@@ -90,14 +90,18 @@ export function AuditLog({
 
   useEffect(() => {
     if (selectedNamespaceId) {
-      setSelectedNamespace(selectedNamespaceId);
-      setViewMode("namespace");
+      queueMicrotask(() => {
+        setSelectedNamespace(selectedNamespaceId);
+        setViewMode("namespace");
+      });
     }
   }, [selectedNamespaceId]);
 
   useEffect(() => {
     if (viewMode === "namespace" && selectedNamespace) {
-      loadLogs(true);
+      queueMicrotask(() => {
+        void loadLogs(true);
+      });
     }
   }, [viewMode, selectedNamespace, operationFilter, loadLogs]);
 

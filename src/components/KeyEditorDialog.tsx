@@ -104,27 +104,33 @@ export function KeyEditorDialog({
   // Load key data when dialog opens
   useEffect(() => {
     if (open && keyName) {
-      loadKeyData();
-      checkBackup();
+      queueMicrotask(() => {
+        void loadKeyData();
+        void checkBackup();
+      });
     } else {
       // Reset state when dialog closes
-      setValue("");
-      setOriginalValue("");
-      setMetadata("");
-      setOriginalMetadata("");
-      setTTL("");
-      setOriginalTTL("");
-      setExpirationTimestamp(null);
-      setError("");
-      setActiveTab("value");
-      setShowFormatted(false);
+      queueMicrotask(() => {
+        setValue("");
+        setOriginalValue("");
+        setMetadata("");
+        setOriginalMetadata("");
+        setTTL("");
+        setOriginalTTL("");
+        setExpirationTimestamp(null);
+        setError("");
+        setActiveTab("value");
+        setShowFormatted(false);
+      });
     }
   }, [open, keyName, namespaceId, loadKeyData, checkBackup]);
 
   // Detect if value is JSON
   useEffect(() => {
     const validJSON = isValidJSON(value);
-    setIsJSON(validJSON);
+    queueMicrotask(() => {
+      setIsJSON(validJSON);
+    });
   }, [value]);
 
   const handleSave = async (): Promise<void> => {

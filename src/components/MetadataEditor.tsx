@@ -52,7 +52,9 @@ export function MetadataEditor({
   }, [namespaceId, keyName]);
 
   useEffect(() => {
-    loadMetadata();
+    queueMicrotask(() => {
+      void loadMetadata();
+    });
   }, [loadMetadata]);
 
   const handleAddTag = (): void => {
