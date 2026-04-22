@@ -23,8 +23,8 @@ RUN npm install -g npm@latest
 # We download patched versions first, then replace all vulnerable ones
 RUN cd /tmp && \
     npm pack glob@11.1.0 && \
-    npm pack tar@7.5.11 && \
-    npm pack minimatch@10.2.4 && \
+    npm pack tar@7.5.13 && \
+    npm pack minimatch@10.2.5 && \
     npm pack picomatch@4.0.4 && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/glob && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/tar && \
@@ -36,9 +36,9 @@ RUN cd /tmp && \
     mkdir -p /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules && \
     cp -r package /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules/glob && \
     rm -rf package && \
-    tar -xzf tar-7.5.11.tgz && \
+    tar -xzf tar-7.5.13.tgz && \
     mv package /usr/local/lib/node_modules/npm/node_modules/tar && \
-    tar -xzf minimatch-10.2.4.tgz && \
+    tar -xzf minimatch-10.2.5.tgz && \
     mv package /usr/local/lib/node_modules/npm/node_modules/minimatch && \
     tar -xzf picomatch-4.0.4.tgz && \
     mkdir -p /usr/local/lib/node_modules/npm/node_modules/tinyglobby/node_modules && \
@@ -84,8 +84,8 @@ WORKDIR /app
 
 # Upgrade npm to latest version and patch its bundled minimatch and picomatch
 RUN npm install -g npm@latest && \
-    cd /tmp && npm pack minimatch@10.2.4 && npm pack picomatch@4.0.4 && \
-    tar -xzf minimatch-10.2.4.tgz && \
+    cd /tmp && npm pack minimatch@10.2.5 && npm pack picomatch@4.0.4 && \
+    tar -xzf minimatch-10.2.5.tgz && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/minimatch && \
     mv package /usr/local/lib/node_modules/npm/node_modules/minimatch && \
     tar -xzf picomatch-4.0.4.tgz && \
@@ -129,9 +129,9 @@ RUN npm install -g wrangler@latest && \
         if [ -f "$dir/package.json" ]; then \
             version=$(grep -o '"version": *"[^"]*"' "$dir/package.json" | head -1 | cut -d'"' -f4); \
             case "$version" in \
-                2.0.0|2.0.1) \
+                2.0.0|2.0.1|2.0.2) \
                     rm -rf "$dir"/* && \
-                    cd /tmp && npm pack brace-expansion@2.0.2 && tar -xzf brace-expansion-2.0.2.tgz && \
+                    cd /tmp && npm pack brace-expansion@2.1.0 && tar -xzf brace-expansion-2.1.0.tgz && \
                     cp -r package/* "$dir/" && rm -rf /tmp/brace-expansion-* /tmp/package ;; \
             esac; \
         fi; \
