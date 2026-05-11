@@ -58,7 +58,7 @@
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.10",
-    "wrangler": "^4.88.0"
+    "wrangler": "^4.90.0"
   },
   "overrides": {
     "esbuild": "0.28.0",
