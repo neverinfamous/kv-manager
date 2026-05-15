@@ -5,7 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/neverinfamous/kv-manager/compare/v2.2.8...HEAD)
+## [Unreleased](https://github.com/neverinfamous/kv-manager/compare/v2.2.9...HEAD)
+
+## [2.2.9](https://github.com/neverinfamous/kv-manager/compare/v2.2.8...v2.2.9) - 2026-05-15
+
+### Changed
+
+- **Dependency Updates**
+  - Bumped `tar` from 7.5.14 to 7.5.15 in Dockerfile and package overrides.
+  - Bumped `react-day-picker` from 9.14.0 to 10.0.0 and updated classNames in `calendar.tsx` to support v10 breaking changes.
+  - Updated React, Tailwind CSS, Vite, and other npm dependencies to their latest compatible versions.
 
 ## [2.2.8](https://github.com/neverinfamous/kv-manager/compare/v2.2.7...v2.2.8) - 2026-05-05
 

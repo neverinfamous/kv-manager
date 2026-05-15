@@ -23,7 +23,7 @@ RUN npm install -g npm@latest
 # We download patched versions first, then replace all vulnerable ones
 RUN cd /tmp && \
     npm pack glob@11.1.0 && \
-    npm pack tar@7.5.14 && \
+    npm pack tar@7.5.15 && \
     npm pack minimatch@10.2.5 && \
     npm pack picomatch@4.0.4 && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/glob && \
@@ -36,7 +36,7 @@ RUN cd /tmp && \
     mkdir -p /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules && \
     cp -r package /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules/glob && \
     rm -rf package && \
-    tar -xzf tar-7.5.14.tgz && \
+    tar -xzf tar-7.5.15.tgz && \
     mv package /usr/local/lib/node_modules/npm/node_modules/tar && \
     tar -xzf minimatch-10.2.5.tgz && \
     mv package /usr/local/lib/node_modules/npm/node_modules/minimatch && \
@@ -82,9 +82,9 @@ FROM node:24-alpine AS runtime
 
 WORKDIR /app
 
-# Upgrade npm to latest version and patch its bundled minimatch and picomatch
+# Upgrade npm to latest version and patch its bundled minimatch, picomatch, and tar
 RUN npm install -g npm@latest && \
-    cd /tmp && npm pack minimatch@10.2.5 && npm pack picomatch@4.0.4 && \
+    cd /tmp && npm pack minimatch@10.2.5 && npm pack picomatch@4.0.4 && npm pack tar@7.5.15 && \
     tar -xzf minimatch-10.2.5.tgz && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/minimatch && \
     mv package /usr/local/lib/node_modules/npm/node_modules/minimatch && \
@@ -92,6 +92,9 @@ RUN npm install -g npm@latest && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/tinyglobby/node_modules/picomatch && \
     mkdir -p /usr/local/lib/node_modules/npm/node_modules/tinyglobby/node_modules && \
     mv package /usr/local/lib/node_modules/npm/node_modules/tinyglobby/node_modules/picomatch && \
+    tar -xzf tar-7.5.15.tgz && \
+    rm -rf /usr/local/lib/node_modules/npm/node_modules/tar && \
+    mv package /usr/local/lib/node_modules/npm/node_modules/tar && \
     rm -rf /tmp/*
 
 # Install wrangler globally with security patches for its bundled dependencies
