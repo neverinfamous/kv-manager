@@ -46,7 +46,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "clsx": "^2.1.1",
-    "esbuild": "0.28.0",
+    "esbuild": "0.28.1",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
@@ -61,7 +61,7 @@
     "wrangler": "^4.91.0"
   },
   "overrides": {
-    "esbuild": "0.28.0",
+    "esbuild": "0.28.1",
     "cross-spawn": "7.0.6",
     "flatted": "3.4.2",
     "glob": "11.1.0",
