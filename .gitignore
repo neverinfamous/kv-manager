@@ -34,3 +34,5 @@ dist-ssr
 
 # D1 local database
 .mf/
+
+.agents/
