@@ -5,7 +5,7 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".wrangler"] },
+  { ignores: ["dist", ".wrangler", ".agents"] },
   // Frontend React code
   {
     extends: [
