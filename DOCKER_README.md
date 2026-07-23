@@ -9,17 +9,21 @@
 [![CodeQL](https://img.shields.io/badge/CodeQL-Passing-brightgreen.svg)](https://github.com/neverinfamous/kv-manager/security/code-scanning)
 [![Type Safety](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](https://github.com/neverinfamous/kv-manager/)
 
-A full-featured management platform for Cloudflare Workers KV, designed for engineering teams and large-scale workloads. Browse namespaces, run bulk operations, search across your entire KV footprint, manage metadata and tags, automate backups to R2, and secure everything with Cloudflare Access Zero Trust.
+A full-featured management platform for Cloudflare Workers KV, designed for engineering teams and large-scale workloads.
+
+## Value Proposition
+
+Browse namespaces with ease. Run bulk operations efficiently. Search across your entire KV footprint. Manage metadata and tags seamlessly. Automate backups to R2. Secure everything with Cloudflare Access Zero Trust.
 
 **[Live Demo](https://kv.adamic.tech/)** • **[GitHub](https://github.com/neverinfamous/kv-manager)** • **[Wiki](https://github.com/neverinfamous/kv-manager/wiki)** • **[Changelog](https://github.com/neverinfamous/kv-manager/blob/main/CHANGELOG.md)** • **[Release Article](https://adamic.tech/articles/kv-manager)**
 
-## Tech Stack
+## Built on a Modern Stack
 
 **Frontend**: React | TypeScript | Vite | Tailwind CSS | shadcn/ui
 
 **Backend**: Cloudflare Workers + KV + D1 + R2 + Durable Objects + Zero Trust
 
-## ✨ Key Features
+## Accelerate Workflows with Powerful Features
 
 - **🗂️ Namespace & Key Management** - Full CRUD operations with cursor-based pagination and Grid/List view toggle
 - **🎨 Color Tags** - 27-color palette for visual namespace organization
@@ -37,7 +41,7 @@ A full-featured management platform for Cloudflare Workers KV, designed for engi
 - **🔐 Enterprise Auth** - Cloudflare Access (Zero Trust) integration
 - **🎨 Modern UI** - Dark/light themes, responsive design, built with React + Tailwind CSS
 
-## 🐳 Quick Start
+## Deploy Instantly with Docker
 
 **Pull and run:**
 
