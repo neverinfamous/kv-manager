@@ -41,7 +41,7 @@ Please describe the tests you ran to verify your changes:
 
 - **OS**: [e.g., Windows 11, macOS 14, Ubuntu 22.04]
 - **Browser**: [e.g., Chrome 120, Firefox 121]
-- **Node.js Version**: [e.g., 18.19.0]
+- **Node.js Version**: [e.g., 24.0.0]
 
 ## Checklist
 

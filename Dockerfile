@@ -52,16 +52,16 @@ RUN apk add --no-cache \
     g++
 
 # Copy package files
-COPY package*.json ./
+COPY package*.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Install ALL dependencies (including devDependencies for build)
-RUN npm ci --include=dev
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN pnpm run build
 
 # -----------------
 # Stage 2: Production dependencies pruning
@@ -71,9 +71,8 @@ RUN npm run build
 FROM builder AS deps
 
 # Remove devDependencies to get production-only node_modules
-# npm prune removes packages not listed in dependencies (keeps only production deps)
-RUN npm prune --omit=dev && \
-    npm cache clean --force
+# pnpm prune removes packages not listed in dependencies (keeps only production deps)
+RUN pnpm prune --prod
 
 # -----------------
 # Stage 3: Runtime
@@ -156,7 +155,7 @@ RUN addgroup -g 1001 app && \
     adduser -D -u 1001 -G app app
 
 # Copy package files (for reference only, deps already installed)
-COPY package*.json ./
+COPY package*.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Copy production dependencies from deps stage (already pruned to production-only)
 # This avoids running npm ci under QEMU emulation which causes illegal instruction errors

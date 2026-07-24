@@ -121,15 +121,15 @@ npx wrangler secret put POLICY_AUD
 
 **Application Dependencies (Fixed)**:
 
-- ✅ `glob` - Upgraded to 11.1.0 via package.json overrides (fixes CVE-2025-64756)
-- ✅ `tar` - Upgraded to 7.5.2 via package.json overrides (fixes CVE-2025-64118)
+- ✅ `glob` - Upgraded to a patched version via package.json overrides
+- ✅ `tar` - Upgraded to a patched version via package.json overrides
 
 **npm CLI Dependencies (Fixed)**:
 
-- ✅ `glob` - Manually patched to 11.1.0 in npm's installation directory (fixes CVE-2025-64756)
-- ✅ `tar` - Manually patched to 7.5.2 in npm's installation directory (fixes CVE-2025-64118)
+- ✅ `glob` - Manually patched in npm's installation directory
+- ✅ `tar` - Manually patched in npm's installation directory
 
-While npm@11.6.2 ships with vulnerable versions, we patch these during the Docker build process by updating npm's own `node_modules` directory. This ensures the npm CLI tool uses secure dependencies.
+While certain npm versions ship with vulnerable dependencies, we patch these during the Docker build process by updating npm's own `node_modules` directory. This ensures the npm CLI tool uses secure dependencies.
 
 **Alpine Base Package Vulnerabilities (Accepted Risk)**:
 

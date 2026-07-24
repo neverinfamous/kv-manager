@@ -40,7 +40,7 @@ We actively welcome pull requests! Here's how to contribute code:
 
 ### Prerequisites
 
-- Node.js 18+ and npm
+- Node.js 24+ and npm
 - Git
 - (Optional) Cloudflare account for testing with real KV namespaces
 
