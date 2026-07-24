@@ -249,6 +249,7 @@ jobs:
           else
             echo "❌ Docker Scout scan timed out or failed"
             echo "🚨 Build blocked - scan timeout is considered a failure"
+            cat scout_output.txt || echo "Could not read scout_output.txt"
             exit 1
           fi
 
