@@ -14,7 +14,7 @@ overrides:
   tar: 7.5.15
   undici: 7.28.0
   sharp: '>=0.35.0'
-  eslint-plugin-react-hooks>eslint: ^10.7.0
+  eslint-plugin-react-hooks>eslint: 10.7.0
 
 importers:
 
@@ -1526,7 +1526,7 @@ packages:
     resolution: {integrity: sha512-f2I7Gw6JbvCexzIInuSbZpfdQ44D7iqdWX01FKLvrPgqxoE7oMj8clOfto8U6vYiz4yd5oKu39rRSVOe1zRu0g==}
     engines: {node: '>=18'}
     peerDependencies:
-      eslint: ^10.7.0
+      eslint: 10.7.0
 
   eslint-plugin-react-refresh@0.5.3:
     resolution: {integrity: sha512-5EMmLCV98Pi4o/f/3DP/v/tNqLHMIc9I8LKClNDWhZ9JTho89/kQcitCXQBMG7sAfVRK0Ie3T2EDOzp1YXYiVA==}
