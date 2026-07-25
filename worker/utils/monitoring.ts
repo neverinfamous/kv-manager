@@ -27,6 +27,7 @@ import {
   getTodayRange,
 } from "./analytics";
 import { triggerWebhooks } from "./webhooks";
+import { auditLog } from "./helpers";
 
 // ============================================================================
 // CONSTANTS
@@ -378,6 +379,20 @@ async function processEvaluations(
           threshold: evaluation.thresholdValue,
         },
       });
+
+      await auditLog(
+        env.METADATA,
+        {
+          namespace_id: namespaceId,
+          operation: "threshold_breached",
+          user_email: "system",
+          details: JSON.stringify({
+            event: evaluation.event,
+            current: evaluation.currentValue,
+            threshold: evaluation.thresholdValue,
+          })
+        }
+      );
     } else if (wasBreached) {
       // Recovery: was breached but now below threshold
       await triggerWebhooks(
@@ -407,6 +422,20 @@ async function processEvaluations(
           threshold: evaluation.thresholdValue,
         },
       });
+
+      await auditLog(
+        env.METADATA,
+        {
+          namespace_id: namespaceId,
+          operation: "threshold_resolved",
+          user_email: "system",
+          details: JSON.stringify({
+            resolved_event: evaluation.event,
+            current: evaluation.currentValue,
+            threshold: evaluation.thresholdValue,
+          })
+        }
+      );
     } else {
       // Not breached and wasn't breached — update checked_at only
       await upsertMonitoringState(env, namespaceId, evaluation.event, {

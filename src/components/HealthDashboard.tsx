@@ -240,6 +240,25 @@ export function HealthDashboard(): React.JSX.Element {
             </Card>
           </div>
 
+          {/* Active Threshold Breaches Alert */}
+          {(health.monitoring?.activeBreaches ?? 0) > 0 && (
+            <Card className="border-red-500/50">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2 text-red-500">
+                  <AlertTriangle className="h-5 w-5" />
+                  Active Threshold Breaches ({health.monitoring.activeBreaches})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm">
+                  There {health.monitoring.activeBreaches === 1 ? 'is' : 'are'} {health.monitoring.activeBreaches} active threshold breach{health.monitoring.activeBreaches === 1 ? '' : 'es'}. 
+                  A penalty of 15 points per breach has been applied to the system health score. 
+                  Check the Audit Logs for details.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Failed Jobs Alert */}
           {health.recentJobs.failedLast24h > 0 && (
             <Card className="border-red-500/50">
