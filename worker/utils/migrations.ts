@@ -199,6 +199,38 @@ export const MIGRATIONS: Migration[] = [
       ALTER TABLE webhooks ADD COLUMN name TEXT NOT NULL DEFAULT '';
     `,
   },
+  {
+    version: 7,
+    name: "monitoring_tables",
+    description:
+      "Add monitoring_thresholds and monitoring_state tables for scheduled metric threshold monitoring",
+    sql: `
+      -- Monitoring threshold configuration per namespace
+      CREATE TABLE IF NOT EXISTS monitoring_thresholds (
+        namespace_id TEXT PRIMARY KEY,
+        storage_bytes_threshold INTEGER,
+        operation_rate_threshold INTEGER,
+        latency_p99_threshold_ms REAL,
+        enabled INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_by TEXT
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_monitoring_thresholds_enabled ON monitoring_thresholds(enabled);
+
+      -- Monitoring state tracking for alert cooldown and breach detection
+      CREATE TABLE IF NOT EXISTS monitoring_state (
+        namespace_id TEXT NOT NULL,
+        event_type TEXT NOT NULL,
+        consecutive_failures INTEGER DEFAULT 0,
+        is_breached INTEGER DEFAULT 0,
+        last_alert_at DATETIME,
+        last_checked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (namespace_id, event_type)
+      );
+    `,
+  },
 ];
 
 // ============================================

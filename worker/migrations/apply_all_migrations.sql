@@ -41,3 +41,33 @@ ALTER TABLE bulk_jobs ADD COLUMN percentage REAL DEFAULT 0;
 -- Used for batch operations to store array of namespace IDs and other operation-specific data
 ALTER TABLE bulk_jobs ADD COLUMN metadata TEXT;
 
+-- ============================================================================
+-- Migration 007: Add monitoring threshold tables
+-- ============================================================================
+
+-- Monitoring threshold configuration per namespace
+CREATE TABLE IF NOT EXISTS monitoring_thresholds (
+  namespace_id TEXT PRIMARY KEY,
+  storage_bytes_threshold INTEGER,
+  operation_rate_threshold INTEGER,
+  latency_p99_threshold_ms REAL,
+  enabled INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_by TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_monitoring_thresholds_enabled ON monitoring_thresholds(enabled);
+
+-- Monitoring state tracking for alert cooldown and breach detection
+CREATE TABLE IF NOT EXISTS monitoring_state (
+  namespace_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  consecutive_failures INTEGER DEFAULT 0,
+  is_breached INTEGER DEFAULT 0,
+  last_alert_at DATETIME,
+  last_checked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (namespace_id, event_type)
+);
+
+

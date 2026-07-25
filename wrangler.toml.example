@@ -56,3 +56,8 @@ ENVIRONMENT = "production"
 # [[kv_namespaces]]
 # binding = "KV_your_namespace_id"
 # id = "your_namespace_id"
+
+# Cron triggers for scheduled monitoring
+[triggers]
+crons = ["0 * * * *"]  # hourly threshold monitoring
+
