@@ -53,12 +53,13 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<an
 
 export async function listThresholds(): Promise<MonitoringThreshold[]> {
   const data = await fetchWithAuth(API_BASE);
-  return data.thresholds || data;
+  return data.result?.thresholds || [];
 }
 
 export async function getThreshold(namespaceId: string): Promise<MonitoringThreshold | null> {
   try {
-    return await fetchWithAuth(`${API_BASE}/${namespaceId}`);
+    const data = await fetchWithAuth(`${API_BASE}/${namespaceId}`);
+    return data.result?.threshold || null;
   } catch (err: unknown) {
     if (err instanceof Error && err.message.includes('404')) {
       return null;
@@ -68,17 +69,19 @@ export async function getThreshold(namespaceId: string): Promise<MonitoringThres
 }
 
 export async function createThreshold(input: ThresholdInput): Promise<MonitoringThreshold> {
-  return fetchWithAuth(API_BASE, {
+  const data = await fetchWithAuth(API_BASE, {
     method: 'POST',
     body: JSON.stringify(input),
   });
+  return data.result?.threshold || data;
 }
 
 export async function updateThreshold(namespaceId: string, input: Partial<ThresholdInput>): Promise<MonitoringThreshold> {
-  return fetchWithAuth(`${API_BASE}/${namespaceId}`, {
+  const data = await fetchWithAuth(`${API_BASE}/${namespaceId}`, {
     method: 'PUT',
     body: JSON.stringify(input),
   });
+  return data.result?.threshold || data;
 }
 
 export async function deleteThreshold(namespaceId: string): Promise<void> {
