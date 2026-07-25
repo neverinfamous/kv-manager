@@ -165,9 +165,9 @@ async function listThresholds(
 
   try {
     const result = await env.METADATA.prepare(
-      `SELECT t.*, n.name as namespace_name 
+      `SELECT t.*, n.namespace_title as namespace_name 
        FROM monitoring_thresholds t
-       LEFT JOIN namespaces n ON t.namespace_id = n.id
+       LEFT JOIN namespaces n ON t.namespace_id = n.namespace_id
        ORDER BY t.created_at DESC`
     ).all<MonitoringThresholdDB>();
 
@@ -211,9 +211,9 @@ async function getThreshold(
 
   try {
     const dbResult = await env.METADATA.prepare(
-      `SELECT t.*, n.name as namespace_name 
+      `SELECT t.*, n.namespace_title as namespace_name 
        FROM monitoring_thresholds t
-       LEFT JOIN namespaces n ON t.namespace_id = n.id
+       LEFT JOIN namespaces n ON t.namespace_id = n.namespace_id
        WHERE t.namespace_id = ?`
     )
       .bind(namespaceId)
