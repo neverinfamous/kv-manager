@@ -121,6 +121,12 @@ Test all major features:
 - Bulk operations
 - Search functionality
 - Import/export operations
+- Scheduled Threshold Monitoring
+
+To test scheduled tasks manually:
+```bash
+curl "http://localhost:8787/__scheduled?cron=0+*+*+*+*"
+```
 
 ### Production Testing (Optional)
 

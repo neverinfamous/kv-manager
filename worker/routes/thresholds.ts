@@ -11,6 +11,7 @@ import type {
   MonitoringThreshold,
 } from "../types";
 import { logError } from "../utils/error-logger";
+import { auditLog } from "../utils/helpers";
 
 /**
  * Input type for creating/updating thresholds
@@ -109,7 +110,7 @@ export async function handleThresholdRoutes(
     }
 
     if (method === "DELETE") {
-      return deleteThreshold(namespaceId, env, corsHeaders, isLocalDev);
+      return deleteThreshold(namespaceId, env, corsHeaders, isLocalDev, userEmail);
     }
   }
 
@@ -373,6 +374,16 @@ async function createThreshold(
     }
 
     const threshold = dbToThreshold(dbResult);
+    
+    if (!isLocalDev) {
+      void auditLog(env.METADATA, {
+        namespace_id: body.namespace_id,
+        operation: "threshold_create",
+        user_email: userEmail,
+        details: JSON.stringify({ threshold }),
+      });
+    }
+
     return jsonResponse(
       { success: true, result: { threshold } },
       corsHeaders,
@@ -549,6 +560,16 @@ async function updateThreshold(
     }
 
     const threshold = dbToThreshold(resultDb);
+    
+    if (!isLocalDev) {
+      void auditLog(env.METADATA, {
+        namespace_id: namespaceId,
+        operation: "threshold_update",
+        user_email: userEmail,
+        details: JSON.stringify({ updates }),
+      });
+    }
+
     return jsonResponse({ success: true, result: { threshold } }, corsHeaders);
   } catch (error) {
     void logError(
@@ -573,6 +594,7 @@ async function deleteThreshold(
   env: Env,
   corsHeaders: HeadersInit,
   isLocalDev: boolean,
+  userEmail: string,
 ): Promise<Response> {
   if (isLocalDev) {
     const index = MOCK_THRESHOLDS.findIndex((t) => t.namespace_id === namespaceId);
@@ -608,6 +630,15 @@ async function deleteThreshold(
     await env.METADATA.prepare("DELETE FROM monitoring_thresholds WHERE namespace_id = ?")
       .bind(namespaceId)
       .run();
+
+    if (!isLocalDev) {
+      void auditLog(env.METADATA, {
+        namespace_id: namespaceId,
+        operation: "threshold_delete",
+        user_email: userEmail,
+        details: JSON.stringify({}),
+      });
+    }
 
     return jsonResponse(
       { success: true, result: { deleted: true } },

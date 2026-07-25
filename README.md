@@ -13,7 +13,7 @@ A full-featured management platform for Cloudflare Workers KV, designed for engi
 
 ## Value Proposition
 
-Browse namespaces with ease. Run bulk operations efficiently. Search across your entire KV footprint. Manage metadata and tags seamlessly. Automate backups to R2. Secure everything with Cloudflare Access Zero Trust.
+Browse namespaces with ease. Run bulk operations efficiently. Search across your entire KV footprint. Manage metadata and tags seamlessly. Automate backups to R2. Monitor metric thresholds automatically. Secure everything with Cloudflare Access Zero Trust.
 
 **[Live Demo](https://kv.adamic.tech/)** • **[Wiki](https://github.com/neverinfamous/kv-manager/wiki)** • **[Changelog](https://github.com/neverinfamous/kv-manager/blob/main/CHANGELOG.md)** • **[Release Article](https://adamic.tech/articles/kv-manager)**
 
@@ -34,6 +34,7 @@ Browse namespaces with ease. Run bulk operations efficiently. Search across your
 - **🔄 Cross-Namespace Migration** - Migrate keys between namespaces with TTL preservation, metadata migration, and rollback support
 - **📥 Import/Export** - JSON/NDJSON support with collision handling
 - **☁️ R2 Backup & Restore** - Cloud-native backup with batch operations
+- **⏱️ Scheduled Threshold Monitoring** - Track metrics automatically and receive alerts when limits are exceeded.
 - **📈 Job History** - Complete audit trail with event timelines and advanced filtering
 - **📊 Metrics Dashboard** - View KV analytics, operation counts, and latency percentiles
 - **🏥 Health Dashboard** - At-a-glance operational status with health score, job history, and backup coverage
@@ -138,6 +139,7 @@ wrangler deploy
 - **[Bulk Operations](https://github.com/neverinfamous/kv-manager/wiki/Bulk-Operations)** - Batch processing at scale
 - **[Import and Export](https://github.com/neverinfamous/kv-manager/wiki/Import-and-Export)** - Data migration
 - **[R2 Backup and Restore](https://github.com/neverinfamous/kv-manager/wiki/R2-Backup-and-Restore)** - Cloud backups
+- **[Threshold Monitoring](https://github.com/neverinfamous/kv-manager/wiki/Threshold-Monitoring)** - Automated threshold alerts
 - **[Job History](https://github.com/neverinfamous/kv-manager/wiki/Job-History)** - Monitoring operations
 - **[Audit Logging](https://github.com/neverinfamous/kv-manager/wiki/Audit-Logging)** - Compliance and tracking
 
