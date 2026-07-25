@@ -16,8 +16,9 @@ import { auditLog } from "../utils/helpers";
 /**
  * Input type for creating/updating thresholds
  */
-interface ThresholdBody {
-  namespace_id?: string;
+export interface ThresholdBody {
+  namespace_id: string;
+  namespace_name?: string;
   storage_bytes_threshold?: number | null;
   operation_rate_threshold?: number | null;
   latency_p99_threshold_ms?: number | null;
@@ -317,15 +318,13 @@ async function createThreshold(
       );
     }
 
-    // Check if namespace exists
-    const nsExists = await env.METADATA.prepare("SELECT namespace_id FROM namespaces WHERE namespace_id = ?").bind(body.namespace_id).first();
-    if (!nsExists) {
-      return jsonResponse(
-        { success: false, error: "Namespace not found" },
-        corsHeaders,
-        404,
-      );
-    }
+    // Ensure namespace is tracked in metadata database
+    const nsTitle = body.namespace_name || body.namespace_id;
+    await env.METADATA.prepare(
+      `INSERT INTO namespaces (namespace_id, namespace_title) 
+       VALUES (?, ?)
+       ON CONFLICT (namespace_id) DO UPDATE SET namespace_title = excluded.namespace_title`
+    ).bind(body.namespace_id, nsTitle).run();
 
     const sbt = body.storage_bytes_threshold ?? null;
     const ort = body.operation_rate_threshold ?? null;

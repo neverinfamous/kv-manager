@@ -12,6 +12,7 @@ export interface MonitoringThreshold {
 
 export interface ThresholdInput {
   namespace_id: string;
+  namespace_name?: string;
   storage_bytes_threshold?: number | null;
   operation_rate_threshold?: number | null;
   latency_p99_threshold_ms?: number | null;

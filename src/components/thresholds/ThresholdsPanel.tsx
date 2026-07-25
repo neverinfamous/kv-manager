@@ -120,8 +120,10 @@ export function ThresholdsPanel({ namespaces }: ThresholdsPanelProps): React.JSX
 
     try {
       setSaving(true);
+      const selectedNs = namespaces.find(n => n.id === formNamespaceId);
       const input: ThresholdInput = {
         namespace_id: formNamespaceId,
+        ...(selectedNs?.title ? { namespace_name: selectedNs.title } : {}),
         storage_bytes_threshold: formStorageBytes ? parseInt(formStorageBytes, 10) : null,
         operation_rate_threshold: formOpRate ? parseInt(formOpRate, 10) : null,
         latency_p99_threshold_ms: formLatency ? parseInt(formLatency, 10) : null,
