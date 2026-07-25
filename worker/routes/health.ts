@@ -257,13 +257,17 @@ async function getHealthSummary(
       `,
       ),
       
-      // Query 7: Active threshold breaches
+      // Query 7: Active threshold breaches (ignoring deleted/disabled thresholds)
       safeQuery(
         env,
         `
         SELECT COUNT(DISTINCT namespace_id) as activeBreaches
         FROM monitoring_state
         WHERE is_breached = 1
+        AND (
+          namespace_id = '__global__' 
+          OR namespace_id IN (SELECT namespace_id FROM monitoring_thresholds WHERE enabled = 1)
+        )
       `,
       ),
     ]);

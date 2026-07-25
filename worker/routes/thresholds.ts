@@ -630,6 +630,11 @@ async function deleteThreshold(
       .bind(namespaceId)
       .run();
 
+    // Clean up stranded monitoring state
+    await env.METADATA.prepare("DELETE FROM monitoring_state WHERE namespace_id = ? AND event_type LIKE 'threshold.%'")
+      .bind(namespaceId)
+      .run();
+
     if (!isLocalDev) {
       void auditLog(env.METADATA, {
         namespace_id: namespaceId,
