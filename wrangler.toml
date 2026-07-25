@@ -73,4 +73,5 @@ persist = true
 
 # Cron triggers for scheduled monitoring
 [triggers]
-crons = ["0 * * * *"]  # hourly threshold monitoring
+crons = ["0 * * * *"]
+
