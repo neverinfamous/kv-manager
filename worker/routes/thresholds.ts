@@ -318,7 +318,7 @@ async function createThreshold(
     }
 
     // Check if namespace exists
-    const nsExists = await env.METADATA.prepare("SELECT id FROM namespaces WHERE id = ?").bind(body.namespace_id).first();
+    const nsExists = await env.METADATA.prepare("SELECT namespace_id FROM namespaces WHERE namespace_id = ?").bind(body.namespace_id).first();
     if (!nsExists) {
       return jsonResponse(
         { success: false, error: "Namespace not found" },
@@ -357,9 +357,9 @@ async function createThreshold(
       .run();
 
     const dbResult = await env.METADATA.prepare(
-      `SELECT t.*, n.name as namespace_name 
+      `SELECT t.*, n.namespace_title as namespace_name 
        FROM monitoring_thresholds t
-       LEFT JOIN namespaces n ON t.namespace_id = n.id
+       LEFT JOIN namespaces n ON t.namespace_id = n.namespace_id
        WHERE t.namespace_id = ?`
     )
       .bind(body.namespace_id)
@@ -543,9 +543,9 @@ async function updateThreshold(
     }
 
     const resultDb = await env.METADATA.prepare(
-      `SELECT t.*, n.name as namespace_name 
+      `SELECT t.*, n.namespace_title as namespace_name 
        FROM monitoring_thresholds t
-       LEFT JOIN namespaces n ON t.namespace_id = n.id
+       LEFT JOIN namespaces n ON t.namespace_id = n.namespace_id
        WHERE t.namespace_id = ?`
     )
       .bind(namespaceId)
