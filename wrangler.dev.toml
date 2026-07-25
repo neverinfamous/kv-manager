@@ -47,7 +47,7 @@ ENVIRONMENT = "development"
 # - No secrets required for local development
 # - CORS is configured to allow http://localhost:5173
 
-# Cron triggers for scheduled monitoring (test via: curl http://localhost:8787/__scheduled?cron=0+*+*+*+*)
+# Cron triggers for scheduled monitoring (test via: curl http://localhost:8787/cdn-cgi/handler/scheduled)
 [triggers]
 crons = ["0 * * * *"]
 

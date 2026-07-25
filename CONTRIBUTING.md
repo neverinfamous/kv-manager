@@ -125,7 +125,7 @@ Test all major features:
 
 To test scheduled tasks manually:
 ```bash
-curl "http://localhost:8787/__scheduled?cron=0+*+*+*+*"
+curl "http://localhost:8787/cdn-cgi/handler/scheduled"
 ```
 
 ### Production Testing (Optional)

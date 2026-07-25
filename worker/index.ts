@@ -336,7 +336,7 @@ export default {
    * against configured thresholds and fire webhook alerts on breaches.
    *
    * Cron triggers only fire on deployed workers — never locally.
-   * Use `curl http://localhost:8787/__scheduled?cron=0+*+*+*+*` for local testing.
+   * Use `curl http://localhost:8787/cdn-cgi/handler/scheduled` for local testing.
    */
   async scheduled(
     _controller: ScheduledController,
