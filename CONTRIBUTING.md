@@ -124,6 +124,9 @@ Test all major features:
 - Scheduled Threshold Monitoring
 
 To test scheduled tasks manually:
+
+> **Note:** Testing the cron triggers requires your API token to have **Account Analytics Read** permissions.
+
 ```bash
 curl "http://localhost:8787/cdn-cgi/handler/scheduled"
 ```

@@ -34,10 +34,10 @@ Browse namespaces with ease. Run bulk operations efficiently. Search across your
 - **🔄 Cross-Namespace Migration** - Migrate keys between namespaces with TTL preservation, metadata migration, and rollback support
 - **📥 Import/Export** - JSON/NDJSON support with collision handling
 - **☁️ R2 Backup & Restore** - Cloud-native backup with batch operations
-- **⏱️ Scheduled Threshold Monitoring** - Track metrics automatically and receive alerts when limits are exceeded.
+- **⏱️ Scheduled Threshold Monitoring** - Track metrics automatically via hourly cron triggers and Cloudflare Analytics API polling to receive alerts when limits are exceeded.
 - **📈 Job History** - Complete audit trail with event timelines and advanced filtering
 - **📊 Metrics Dashboard** - View KV analytics, operation counts, and latency percentiles
-- **🏥 Health Dashboard** - At-a-glance operational status with health score, job history, and backup coverage
+- **🏥 Health Dashboard** - At-a-glance operational status with health score (including an automatic 15-point penalty for critical threshold breaches), job history, and backup coverage
 - **🔔 Webhooks** - Event-driven HTTP notifications for key operations, bulk jobs, and failures
 - **🔐 Enterprise Auth** - Cloudflare Access (Zero Trust) integration
 - **🎨 Modern UI** - Dark/light themes, responsive design, built with React + Tailwind CSS

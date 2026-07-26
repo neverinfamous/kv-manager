@@ -146,7 +146,7 @@ We monitor these vulnerabilities and will update as soon as patches become avail
 
 ### API Token Permissions
 
-- Worker requires **Account D1 Edit** and **Workers KV Storage Edit** permissions
+- Worker requires **Account D1 Edit**, **Workers KV Storage Edit**, and **Account Analytics Read** permissions
 - Avoid using Global API Key (use scoped API tokens)
 - Review token access logs in Cloudflare dashboard
 
