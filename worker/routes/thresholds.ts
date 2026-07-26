@@ -374,14 +374,12 @@ async function createThreshold(
 
     const threshold = dbToThreshold(dbResult);
     
-    if (!isLocalDev) {
-      void auditLog(env.METADATA, {
-        namespace_id: body.namespace_id,
-        operation: "threshold_create",
-        user_email: userEmail,
-        details: JSON.stringify({ threshold }),
-      });
-    }
+    void auditLog(env.METADATA, {
+      namespace_id: body.namespace_id,
+      operation: "threshold_create",
+      user_email: userEmail,
+      details: JSON.stringify({ threshold }),
+    });
 
     return jsonResponse(
       { success: true, result: { threshold } },
@@ -560,14 +558,12 @@ async function updateThreshold(
 
     const threshold = dbToThreshold(resultDb);
     
-    if (!isLocalDev) {
-      void auditLog(env.METADATA, {
-        namespace_id: namespaceId,
-        operation: "threshold_update",
-        user_email: userEmail,
-        details: JSON.stringify({ updates }),
-      });
-    }
+    void auditLog(env.METADATA, {
+      namespace_id: namespaceId,
+      operation: "threshold_update",
+      user_email: userEmail,
+      details: JSON.stringify({ updates }),
+    });
 
     return jsonResponse({ success: true, result: { threshold } }, corsHeaders);
   } catch (error) {
@@ -635,14 +631,12 @@ async function deleteThreshold(
       .bind(namespaceId)
       .run();
 
-    if (!isLocalDev) {
-      void auditLog(env.METADATA, {
-        namespace_id: namespaceId,
-        operation: "threshold_delete",
-        user_email: userEmail,
-        details: JSON.stringify({}),
-      });
-    }
+    void auditLog(env.METADATA, {
+      namespace_id: namespaceId,
+      operation: "threshold_delete",
+      user_email: userEmail,
+      details: JSON.stringify({}),
+    });
 
     return jsonResponse(
       { success: true, result: { deleted: true } },
