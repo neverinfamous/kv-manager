@@ -100,8 +100,8 @@ RUN npm install -g npm@latest && \
 # Wrangler bundles vulnerable versions of glob, cross-spawn, and brace-expansion
 # We patch these by installing fixed versions that npm will use to satisfy wrangler's deps
 RUN npm install -g wrangler@latest && \
-    # Patch wrangler's bundled vulnerable dependencies
-    cd /usr/local/lib/node_modules/wrangler && \
+    # Patch all globally installed packages' vulnerable dependencies (npm, wrangler)
+    cd /usr/local/lib/node_modules && \
     # Find and replace vulnerable glob versions
     find . -type d -name "glob" -path "*/node_modules/*" | while read dir; do \
         if [ -f "$dir/package.json" ]; then \
