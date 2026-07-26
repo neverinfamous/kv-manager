@@ -100,45 +100,48 @@ RUN npm install -g npm@latest && \
 # Wrangler bundles vulnerable versions of glob, cross-spawn, and brace-expansion
 # We patch these by installing fixed versions that npm will use to satisfy wrangler's deps
 RUN npm install -g wrangler@latest && \
-    # Patch wrangler's bundled vulnerable dependencies
-    cd /usr/local/lib/node_modules/wrangler && \
+    # Patch all globally installed packages' vulnerable dependencies (npm, wrangler)
     # Find and replace vulnerable glob versions
-    find . -type d -name "glob" -path "*/node_modules/*" | while read dir; do \
+    find /usr/local/lib/node_modules -type d -name "glob" -path "*/node_modules/*" | while read dir; do \
         if [ -f "$dir/package.json" ]; then \
             version=$(grep -o '"version": *"[^"]*"' "$dir/package.json" | head -1 | cut -d'"' -f4); \
             case "$version" in \
                 10.4.*|10.3.*|10.2.*) \
+                    (cd /tmp && npm pack glob@10.5.0 && tar -xzf glob-10.5.0.tgz) && \
                     rm -rf "$dir"/* && \
-                    cd /tmp && npm pack glob@10.5.0 && tar -xzf glob-10.5.0.tgz && \
-                    cp -r package/* "$dir/" && rm -rf /tmp/glob-* /tmp/package ;; \
+                    cp -r /tmp/package/* "$dir/" && \
+                    rm -rf /tmp/glob-* /tmp/package ;; \
             esac; \
         fi; \
     done && \
     # Find and replace vulnerable cross-spawn versions
-    find . -type d -name "cross-spawn" -path "*/node_modules/*" | while read dir; do \
+    find /usr/local/lib/node_modules -type d -name "cross-spawn" -path "*/node_modules/*" | while read dir; do \
         if [ -f "$dir/package.json" ]; then \
             version=$(grep -o '"version": *"[^"]*"' "$dir/package.json" | head -1 | cut -d'"' -f4); \
             case "$version" in \
                 7.0.[0-4]) \
+                    (cd /tmp && npm pack cross-spawn@7.0.6 && tar -xzf cross-spawn-7.0.6.tgz) && \
                     rm -rf "$dir"/* && \
-                    cd /tmp && npm pack cross-spawn@7.0.6 && tar -xzf cross-spawn-7.0.6.tgz && \
-                    cp -r package/* "$dir/" && rm -rf /tmp/cross-spawn-* /tmp/package ;; \
+                    cp -r /tmp/package/* "$dir/" && \
+                    rm -rf /tmp/cross-spawn-* /tmp/package ;; \
             esac; \
         fi; \
     done && \
     # Find and replace vulnerable brace-expansion versions
-    find . -type d -name "brace-expansion" -path "*/node_modules/*" | while read dir; do \
+    find /usr/local/lib/node_modules -type d -name "brace-expansion" -path "*/node_modules/*" | while read dir; do \
         if [ -f "$dir/package.json" ]; then \
             version=$(grep -o '"version": *"[^"]*"' "$dir/package.json" | head -1 | cut -d'"' -f4); \
             case "$version" in \
                 2.0.0|2.0.1|2.0.2) \
+                    (cd /tmp && npm pack brace-expansion@2.1.2 && tar -xzf brace-expansion-2.1.2.tgz) && \
                     rm -rf "$dir"/* && \
-                    cd /tmp && npm pack brace-expansion@2.1.2 && tar -xzf brace-expansion-2.1.2.tgz && \
-                    cp -r package/* "$dir/" && rm -rf /tmp/brace-expansion-* /tmp/package ;; \
+                    cp -r /tmp/package/* "$dir/" && \
+                    rm -rf /tmp/brace-expansion-* /tmp/package ;; \
                 5.0.7) \
+                    (cd /tmp && npm pack brace-expansion@5.0.8 && tar -xzf brace-expansion-5.0.8.tgz) && \
                     rm -rf "$dir"/* && \
-                    cd /tmp && npm pack brace-expansion@5.0.8 && tar -xzf brace-expansion-5.0.8.tgz && \
-                    cp -r package/* "$dir/" && rm -rf /tmp/brace-expansion-* /tmp/package ;; \
+                    cp -r /tmp/package/* "$dir/" && \
+                    rm -rf /tmp/brace-expansion-* /tmp/package ;; \
             esac; \
         fi; \
     done && \
