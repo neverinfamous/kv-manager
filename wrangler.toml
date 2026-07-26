@@ -70,3 +70,8 @@ invocation_logs = true
 enabled = true
 head_sampling_rate = 1
 persist = true
+
+# Cron triggers for scheduled monitoring
+[triggers]
+crons = ["0 * * * *"]
+

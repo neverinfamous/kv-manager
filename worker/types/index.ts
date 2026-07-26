@@ -281,7 +281,12 @@ export type WebhookEventType =
   | "namespace.created"
   | "namespace.deleted"
   | "job.completed"
-  | "job.failed";
+  | "job.failed"
+  | "threshold.storage_usage"
+  | "threshold.operation_rate"
+  | "threshold.operation_latency"
+  | "threshold.resolved"
+  | "analytics.unavailable";
 
 export interface WebhookTestResult {
   success: boolean;
@@ -409,6 +414,46 @@ export interface KVAnalyticsResult {
 export interface GraphQLAnalyticsResponse<T> {
   data?: T;
   errors?: { message: string }[];
+}
+
+// ============================================================================
+// MONITORING TYPES
+// ============================================================================
+
+// Database representation of monitoring thresholds
+export interface MonitoringThresholdDB {
+  namespace_id: string;
+  namespace_name?: string; // populated via LEFT JOIN with namespaces table
+  storage_bytes_threshold: number | null;
+  operation_rate_threshold: number | null;
+  latency_p99_threshold_ms: number | null;
+  enabled: number; // 0 or 1
+  created_at: string;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+// API representation of monitoring thresholds
+export interface MonitoringThreshold {
+  namespace_id: string;
+  namespace_name?: string;
+  storage_bytes_threshold: number | null;
+  operation_rate_threshold: number | null;
+  latency_p99_threshold_ms: number | null;
+  enabled: boolean;
+  created_at: string;
+  updated_at: string;
+  updated_by: string | null;
+}
+
+// Database representation of monitoring state
+export interface MonitoringStateDB {
+  namespace_id: string;
+  event_type: string;
+  consecutive_failures: number;
+  is_breached: number; // 0 or 1
+  last_alert_at: string | null;
+  last_checked_at: string;
 }
 
 // Migration Types (for API responses)

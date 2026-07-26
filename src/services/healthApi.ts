@@ -49,6 +49,9 @@ export interface HealthSummary {
   };
   lowMetadataNamespaces: LowMetadataNamespace[];
   recentFailedJobs: RecentFailedJob[];
+  monitoring: {
+    activeBreaches: number;
+  };
 }
 
 // ============================================================================
@@ -160,6 +163,11 @@ export function calculateHealthScore(health: HealthSummary): {
     if (orphanedPercent > 10) {
       score -= 15;
     }
+  }
+
+  // Penalty: Active threshold breaches (-15 per breach)
+  if (health.monitoring?.activeBreaches > 0) {
+    score -= 15 * health.monitoring.activeBreaches;
   }
 
   // Clamp score to 0-100

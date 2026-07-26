@@ -104,3 +104,29 @@ CREATE TABLE key_colors (
 
 CREATE INDEX idx_key_colors_namespace ON key_colors(namespace_id);
 CREATE INDEX idx_key_colors_updated ON key_colors(updated_at DESC);
+
+-- Monitoring threshold configuration per namespace
+CREATE TABLE monitoring_thresholds (
+  namespace_id TEXT PRIMARY KEY,
+  storage_bytes_threshold INTEGER,
+  operation_rate_threshold INTEGER,
+  latency_p99_threshold_ms REAL,
+  enabled INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_by TEXT
+);
+
+CREATE INDEX idx_monitoring_thresholds_enabled ON monitoring_thresholds(enabled);
+
+-- Monitoring state tracking for alert cooldown and breach detection
+CREATE TABLE monitoring_state (
+  namespace_id TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  consecutive_failures INTEGER DEFAULT 0,
+  is_breached INTEGER DEFAULT 0,
+  last_alert_at DATETIME,
+  last_checked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (namespace_id, event_type)
+);
+

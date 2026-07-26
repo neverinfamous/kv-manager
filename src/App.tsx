@@ -108,6 +108,12 @@ const HealthDashboard = lazy(() =>
   })),
 );
 
+const ThresholdsPanel = lazy(() =>
+  import("./components/thresholds/ThresholdsPanel").then((m) => ({
+    default: m.ThresholdsPanel,
+  })),
+);
+
 type View =
   | { type: "list" }
   | { type: "namespace"; namespaceId: string; namespaceTitle: string }
@@ -116,7 +122,8 @@ type View =
   | { type: "health" }
   | { type: "audit"; namespaceId?: string }
   | { type: "job-history" }
-  | { type: "webhooks" };
+  | { type: "webhooks" }
+  | { type: "monitoring" };
 
 export default function App(): React.JSX.Element {
   const [namespaces, setNamespaces] = useState<KVNamespace[]>([]);
@@ -1283,6 +1290,13 @@ export default function App(): React.JSX.Element {
                 <Bell className="h-4 w-4 mr-2" />
                 Webhooks
               </Button>
+              <Button
+                variant={currentView.type === "monitoring" ? "default" : "ghost"}
+                onClick={() => setCurrentView({ type: "monitoring" })}
+              >
+                <Monitor className="h-4 w-4 mr-2" />
+                Monitoring
+              </Button>
             </div>
           )}
         </div>
@@ -2186,6 +2200,9 @@ export default function App(): React.JSX.Element {
 
           {/* Webhooks View */}
           {currentView.type === "webhooks" && <WebhookManager />}
+
+          {/* Monitoring View */}
+          {currentView.type === "monitoring" && <ThresholdsPanel namespaces={namespaces} />}
         </Suspense>
       </main>
 

@@ -4,7 +4,7 @@
 name = "kv-manager"
 main = "worker/index.ts"
 compatibility_date = "2025-01-01"
-node_compat = true
+compatibility_flags = ["nodejs_compat"]
 
 # Build configuration for production
 [build]
@@ -56,3 +56,8 @@ ENVIRONMENT = "production"
 # [[kv_namespaces]]
 # binding = "KV_your_namespace_id"
 # id = "your_namespace_id"
+
+# Cron triggers for scheduled monitoring
+[triggers]
+crons = ["0 * * * *"]  # hourly threshold monitoring
+

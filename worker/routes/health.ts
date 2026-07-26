@@ -50,6 +50,9 @@ interface HealthSummary {
   };
   lowMetadataNamespaces: LowMetadataNamespace[];
   recentFailedJobs: RecentFailedJob[];
+  monitoring: {
+    activeBreaches: number;
+  };
 }
 
 // ============================================================================
@@ -94,6 +97,9 @@ const MOCK_HEALTH: HealthSummary = {
       completedAt: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
     },
   ],
+  monitoring: {
+    activeBreaches: 2,
+  },
 };
 
 // ============================================================================
@@ -166,6 +172,7 @@ async function getHealthSummary(
       jobsResult,
       lowMetadataResult,
       failedJobsResult,
+      monitoringResult,
     ] = await Promise.all([
       // Query 1: Namespace counts (total, with colors, with metadata)
       safeQuery(
@@ -249,6 +256,20 @@ async function getHealthSummary(
         LIMIT 10
       `,
       ),
+      
+      // Query 7: Active threshold breaches (ignoring deleted/disabled thresholds)
+      safeQuery(
+        env,
+        `
+        SELECT COUNT(DISTINCT namespace_id) as activeBreaches
+        FROM monitoring_state
+        WHERE is_breached = 1
+        AND (
+          namespace_id = '__global__' 
+          OR namespace_id IN (SELECT namespace_id FROM monitoring_thresholds WHERE enabled = 1)
+        )
+      `,
+      ),
     ]);
 
     // Build health summary with graceful defaults for any failed queries
@@ -292,6 +313,9 @@ async function getHealthSummary(
           completedAt: String(row["completedAt"] ?? ""),
         }),
       ),
+      monitoring: {
+        activeBreaches: Number(monitoringResult?.["activeBreaches"] ?? 0),
+      },
     };
 
     logInfo("Health summary fetched successfully", ctx);

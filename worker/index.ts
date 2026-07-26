@@ -1,3 +1,4 @@
+import type { ScheduledController, ExecutionContext } from "@cloudflare/workers-types";
 import type { Env } from "./types";
 import { validateAccessJWT } from "./utils/auth";
 import {
@@ -21,6 +22,9 @@ import { handleColorRoutes } from "./routes/colors";
 import { handleWebhookRoutes } from "./routes/webhooks";
 import { handleHealthRoutes } from "./routes/health";
 import { handleMigrateRoutes } from "./routes/migrate";
+import { handleThresholdRoutes } from "./routes/thresholds";
+
+import { processMonitoring } from "./utils/monitoring";
 
 /**
  * Main request handler
@@ -273,6 +277,18 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
     if (migrateResponse) return migrateResponse;
   }
 
+  if (url.pathname.startsWith("/api/thresholds")) {
+    const thresholdResponse = await handleThresholdRoutes(
+      request,
+      env,
+      url,
+      corsHeaders,
+      isLocalDev,
+      userEmail,
+    );
+    if (thresholdResponse) return thresholdResponse;
+  }
+
   // 404 for unknown API routes
   return new Response(
     JSON.stringify({
@@ -312,6 +328,31 @@ export default {
         },
       );
     }
+  },
+
+  /**
+   * Cron trigger handler for scheduled threshold monitoring.
+   * Runs hourly (configured in wrangler.toml) to check KV namespace metrics
+   * against configured thresholds and fire webhook alerts on breaches.
+   *
+   * Cron triggers only fire on deployed workers — never locally.
+   * Use `curl http://localhost:8787/cdn-cgi/handler/scheduled` for local testing.
+   */
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ) {
+    ctx.waitUntil(
+      processMonitoring(env).catch(async (err: unknown) => {
+        await logError(
+          env,
+          err instanceof Error ? err : String(err),
+          createErrorContext("worker", "scheduled_error"),
+          false,
+        );
+      }),
+    );
   },
 };
 
