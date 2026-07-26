@@ -135,6 +135,10 @@ RUN npm install -g wrangler@latest && \
                     rm -rf "$dir"/* && \
                     cd /tmp && npm pack brace-expansion@2.1.2 && tar -xzf brace-expansion-2.1.2.tgz && \
                     cp -r package/* "$dir/" && rm -rf /tmp/brace-expansion-* /tmp/package ;; \
+                5.0.7) \
+                    rm -rf "$dir"/* && \
+                    cd /tmp && npm pack brace-expansion@5.0.8 && tar -xzf brace-expansion-5.0.8.tgz && \
+                    cp -r package/* "$dir/" && rm -rf /tmp/brace-expansion-* /tmp/package ;; \
             esac; \
         fi; \
     done && \
