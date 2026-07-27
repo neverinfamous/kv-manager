@@ -33,7 +33,7 @@
     "date-fns": "^4.4.0",
     "jose": "^6.2.4",
     "jszip": "^3.10.1",
-    "lucide-react": "^1.26.0",
+    "lucide-react": "^1.27.0",
     "react": "^19.2.8",
     "react-day-picker": "^10.0.1",
     "react-dom": "^19.2.8"
