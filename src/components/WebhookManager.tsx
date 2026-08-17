@@ -449,42 +449,48 @@ export function WebhookManager(): React.ReactElement {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="webhook-name">Name</Label>
-              <Input
-                id="webhook-name"
-                name="webhook-name"
-                placeholder="My Webhook"
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-              />
+              <Label htmlFor="webhook-name" className="flex flex-col gap-2">
+                <span>Name</span>
+                <Input
+                  id="webhook-name"
+                  name="webhook-name"
+                  placeholder="My Webhook"
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                />
+              </Label>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="webhook-url">URL</Label>
-              <Input
-                id="webhook-url"
-                name="webhook-url"
-                type="url"
-                placeholder="https://example.com/webhook"
-                value={formUrl}
-                onChange={(e) => setFormUrl(e.target.value)}
-              />
+              <Label htmlFor="webhook-url" className="flex flex-col gap-2">
+                <span>URL</span>
+                <Input
+                  id="webhook-url"
+                  name="webhook-url"
+                  type="url"
+                  placeholder="https://example.com/webhook"
+                  value={formUrl}
+                  onChange={(e) => setFormUrl(e.target.value)}
+                />
+              </Label>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="webhook-secret">Secret (optional)</Label>
-              <Input
-                id="webhook-secret"
-                name="webhook-secret"
-                type="password"
-                placeholder="For HMAC signature verification"
-                value={formSecret}
-                onChange={(e) => setFormSecret(e.target.value)}
-              />
+              <Label htmlFor="webhook-secret" className="flex flex-col gap-2">
+                <span>Secret (optional)</span>
+                <Input
+                  id="webhook-secret"
+                  name="webhook-secret"
+                  type="password"
+                  placeholder="For HMAC signature verification"
+                  value={formSecret}
+                  onChange={(e) => setFormSecret(e.target.value)}
+                />
+              </Label>
               <p className="text-xs text-muted-foreground">
                 If set, requests will include an X-Webhook-Signature header
               </p>
             </div>
             <div className="space-y-2">
-              <Label>Events</Label>
+              <div className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Events</div>
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
                 {ALL_WEBHOOK_EVENTS.map((event) => (
                   <div key={event} className="flex items-center space-x-2">
