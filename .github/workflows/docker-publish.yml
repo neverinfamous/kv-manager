@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -274,7 +274,6 @@ jobs:
 
     environment:
       name: production
-      url: https://hub.docker.com/r/writenotenow/kv-manager
 
     steps:
       - name: Checkout repository
@@ -334,7 +333,7 @@ jobs:
       # Update Docker Hub description
       - name: Update Docker Hub Description
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: peter-evans/dockerhub-description@v4
+        uses: peter-evans/dockerhub-description@v5
         continue-on-error: true
         timeout-minutes: 5
         with:
