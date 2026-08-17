@@ -137,11 +137,37 @@ RUN npm install -g wrangler@latest && \
                     rm -rf "$dir"/* && \
                     cp -r /tmp/package/* "$dir/" && \
                     rm -rf /tmp/brace-expansion-* /tmp/package ;; \
-                5.0.7) \
-                    (cd /tmp && npm pack brace-expansion@5.0.8 && tar -xzf brace-expansion-5.0.8.tgz) && \
+                5.0.7|5.0.8) \
+                    (cd /tmp && npm pack brace-expansion@5.0.9 && tar -xzf brace-expansion-5.0.9.tgz) && \
                     rm -rf "$dir"/* && \
                     cp -r /tmp/package/* "$dir/" && \
                     rm -rf /tmp/brace-expansion-* /tmp/package ;; \
+            esac; \
+        fi; \
+    done && \
+    # Find and replace vulnerable ip-address versions
+    find /usr/local/lib/node_modules -type d -name "ip-address" -path "*/node_modules/*" | while read dir; do \
+        if [ -f "$dir/package.json" ]; then \
+            version=$(grep -o '"version": *"[^"]*"' "$dir/package.json" | head -1 | cut -d'"' -f4); \
+            case "$version" in \
+                10.2.0|10.2.1) \
+                    (cd /tmp && npm pack ip-address@10.3.1 && tar -xzf ip-address-10.3.1.tgz) && \
+                    rm -rf "$dir"/* && \
+                    cp -r /tmp/package/* "$dir/" && \
+                    rm -rf /tmp/ip-address-* /tmp/package ;; \
+            esac; \
+        fi; \
+    done && \
+    # Find and replace vulnerable undici versions
+    find /usr/local/lib/node_modules -type d -name "undici" -path "*/node_modules/*" | while read dir; do \
+        if [ -f "$dir/package.json" ]; then \
+            version=$(grep -o '"version": *"[^"]*"' "$dir/package.json" | head -1 | cut -d'"' -f4); \
+            case "$version" in \
+                6.26.*|6.27.*) \
+                    (cd /tmp && npm pack undici@6.28.0 && tar -xzf undici-6.28.0.tgz) && \
+                    rm -rf "$dir"/* && \
+                    cp -r /tmp/package/* "$dir/" && \
+                    rm -rf /tmp/undici-* /tmp/package ;; \
             esac; \
         fi; \
     done && \
@@ -152,7 +178,9 @@ RUN npm install -g wrangler@latest && \
 # - curl 8.14.1-r2 has CVE-2025-10966 (MEDIUM) with no fix available yet (Alpine base package)
 # - busybox 1.37.0-r19 has CVE-2025-46394 & CVE-2024-58251 (LOW) with no fixes available yet (Alpine base package)
 # Alpine base package vulnerabilities (curl, busybox) are accepted risks with no available patches
-RUN apk add --no-cache \
+# We upgrade nghttp2 from edge main repo to resolve CVE-2026-58055
+RUN apk add --no-cache nghttp2>=1.70.0 --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main && \
+    apk add --no-cache \
     curl \
     ca-certificates
 
