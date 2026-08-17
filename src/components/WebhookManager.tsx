@@ -490,7 +490,7 @@ export function WebhookManager(): React.ReactElement {
               </p>
             </div>
             <div className="space-y-2">
-              <Label>Events</Label>
+              <div className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Events</div>
               <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded-md p-3">
                 {ALL_WEBHOOK_EVENTS.map((event) => (
                   <div key={event} className="flex items-center space-x-2">
