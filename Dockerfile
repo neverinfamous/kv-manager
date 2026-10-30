@@ -24,8 +24,8 @@ RUN npm install -g npm@latest
 RUN cd /tmp && \
     npm pack glob@11.1.0 && \
     npm pack tar@7.5.22 && \
-    npm pack minimatch@10.2.5 && \
-    npm pack picomatch@4.0.5 && \
+    npm pack minimatch@10.2.6 && \
+    npm pack picomatch@4.0.7 && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/glob && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/tar && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/minimatch && \
@@ -38,9 +38,9 @@ RUN cd /tmp && \
     rm -rf package && \
     tar -xzf tar-7.5.22.tgz && \
     mv package /usr/local/lib/node_modules/npm/node_modules/tar && \
-    tar -xzf minimatch-10.2.5.tgz && \
+    tar -xzf minimatch-10.2.6.tgz && \
     mv package /usr/local/lib/node_modules/npm/node_modules/minimatch && \
-    tar -xzf picomatch-4.0.5.tgz && \
+    tar -xzf picomatch-4.0.7.tgz && \
     mkdir -p /usr/local/lib/node_modules/npm/node_modules/tinyglobby/node_modules && \
     mv package /usr/local/lib/node_modules/npm/node_modules/tinyglobby/node_modules/picomatch && \
     rm -rf /tmp/*
@@ -83,11 +83,11 @@ WORKDIR /app
 
 # Upgrade npm to latest version and patch its bundled minimatch, picomatch, and tar
 RUN npm install -g npm@latest && \
-    cd /tmp && npm pack minimatch@10.2.5 && npm pack picomatch@4.0.5 && npm pack tar@7.5.22 && \
-    tar -xzf minimatch-10.2.5.tgz && \
+    cd /tmp && npm pack minimatch@10.2.6 && npm pack picomatch@4.0.7 && npm pack tar@7.5.22 && \
+    tar -xzf minimatch-10.2.6.tgz && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/minimatch && \
     mv package /usr/local/lib/node_modules/npm/node_modules/minimatch && \
-    tar -xzf picomatch-4.0.5.tgz && \
+    tar -xzf picomatch-4.0.7.tgz && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/tinyglobby/node_modules/picomatch && \
     mkdir -p /usr/local/lib/node_modules/npm/node_modules/tinyglobby/node_modules && \
     mv package /usr/local/lib/node_modules/npm/node_modules/tinyglobby/node_modules/picomatch && \
@@ -150,8 +150,8 @@ RUN npm install -g wrangler@latest && \
         if [ -f "$dir/package.json" ]; then \
             version=$(grep -o '"version": *"[^"]*"' "$dir/package.json" | head -1 | cut -d'"' -f4); \
             case "$version" in \
-                10.2.0|10.2.1) \
-                    (cd /tmp && npm pack ip-address@10.3.1 && tar -xzf ip-address-10.3.1.tgz) && \
+                10.2.0|10.2.1|10.[3-6].*|10.7.[0-4]) \
+                    (cd /tmp && npm pack ip-address@10.7.5 && tar -xzf ip-address-10.7.5.tgz) && \
                     rm -rf "$dir"/* && \
                     cp -r /tmp/package/* "$dir/" && \
                     rm -rf /tmp/ip-address-* /tmp/package ;; \
@@ -163,8 +163,8 @@ RUN npm install -g wrangler@latest && \
         if [ -f "$dir/package.json" ]; then \
             version=$(grep -o '"version": *"[^"]*"' "$dir/package.json" | head -1 | cut -d'"' -f4); \
             case "$version" in \
-                6.26.*|6.27.*) \
-                    (cd /tmp && npm pack undici@6.28.0 && tar -xzf undici-6.28.0.tgz) && \
+                6.26.*|6.27.*|6.28.*|6.29.0) \
+                    (cd /tmp && npm pack undici@6.29.1 && tar -xzf undici-6.29.1.tgz) && \
                     rm -rf "$dir"/* && \
                     cp -r /tmp/package/* "$dir/" && \
                     rm -rf /tmp/undici-* /tmp/package ;; \
@@ -178,11 +178,14 @@ RUN npm install -g wrangler@latest && \
 # - curl 8.14.1-r2 has CVE-2025-10966 (MEDIUM) with no fix available yet (Alpine base package)
 # - busybox 1.37.0-r19 has CVE-2025-46394 & CVE-2024-58251 (LOW) with no fixes available yet (Alpine base package)
 # Alpine base package vulnerabilities (curl, busybox) are accepted risks with no available patches
+# - musl 1.2.6-r3 has CVE-2026-107891 (UNSPECIFIED severity); fix 1.2.6-r6 is not yet published to Alpine 3.24
 # We upgrade nghttp2 from edge main repo to resolve CVE-2026-58055
+# We also upgrade openssl (libcrypto3/libssl3), zlib, and musl to the latest Alpine patch releases
 RUN apk add --no-cache nghttp2>=1.70.0 --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main && \
     apk add --no-cache \
     curl \
-    ca-certificates
+    ca-certificates && \
+    apk upgrade --no-cache libcrypto3 libssl3 zlib musl musl-utils
 
 # Create non-root user for security
 # Note: Alpine Linux uses GID 1000 for 'users' group, so we use a different GID
