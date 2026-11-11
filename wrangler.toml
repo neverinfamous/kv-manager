@@ -4,6 +4,8 @@ name = "kv-manager"
 main = "worker/index.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = false
+preview_urls = false
 
 # Assets configuration - serve static files from dist/
 [assets]
@@ -46,6 +48,7 @@ ENVIRONMENT = "production"
 # API_KEY - Your Cloudflare API token
 # TEAM_DOMAIN - Your Cloudflare Access team domain (e.g., https://myteam.cloudflareaccess.com)
 # POLICY_AUD - Your Cloudflare Access policy AUD tag
+# ALLOWED_ORIGINS - (Optional) Comma-separated list of additional trusted CORS origins (same-origin is allowed by default)
 
 # Example KV namespace bindings (add as needed)
 # [[kv_namespaces]]

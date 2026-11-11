@@ -18,9 +18,10 @@ export interface Env {
   ACCOUNT_ID?: string;
   API_KEY?: string;
 
-  // Cloudflare Access JWT validation
+  // Cloudflare Access JWT validation & CORS
   TEAM_DOMAIN?: string;
   POLICY_AUD?: string;
+  ALLOWED_ORIGINS?: string;
 
   // Environment indicator
   ENVIRONMENT?: string;
@@ -321,7 +322,7 @@ export interface StructuredError {
 }
 
 // CORS Types
-export type CorsHeaders = HeadersInit;
+export type CorsHeaders = Record<string, string>;
 
 // ============================================================================
 // KV METRICS TYPES

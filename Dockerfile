@@ -16,29 +16,46 @@ WORKDIR /app
 RUN npm install -g npm@latest
 
 # Patch npm's own bundled dependencies:
-# - CVE-2025-64756 (glob): npm bundles vulnerable glob@11.0.3 and glob@10.4.5 (in node-gyp)
+# - CVE-2025-64756, CVE-2026-118773 (glob): npm bundles vulnerable glob@13.0.6 / glob@10.4.5 (in node-gyp)
 # - CVE-2025-64118 (tar): npm bundles vulnerable tar@7.5.1
-# - GHSA-7r86-cg39-jmmj (minimatch ReDoS): npm bundles vulnerable minimatch@10.2.2
+# - GHSA-7r86-cg39-jmmj, GHSA-g3hv-75wg-m249 (minimatch ReDoS): npm bundles vulnerable minimatch@10.2.2
 # - CVE-2026-33671 (picomatch Method Injection): npm bundles vulnerable picomatch@4.0.3 inside tinyglobby
 # We download patched versions first, then replace all vulnerable ones
 RUN cd /tmp && \
-    npm pack glob@11.1.0 && \
+    npm pack glob@14.0.4 && \
+    npm pack path-scurry@3.0.0 && \
     npm pack tar@7.5.22 && \
-    npm pack minimatch@10.2.6 && \
+    npm pack @isaacs/brace-expansion@5.0.1 && \
+    npm pack brace-expansion@5.0.12 && \
+    npm pack @isaacs/nonrecursive-glob-match@1.1.0 && \
+    npm pack minimatch@11.0.5 && \
     npm pack picomatch@4.0.7 && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/glob && \
+    rm -rf /usr/local/lib/node_modules/npm/node_modules/path-scurry && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/tar && \
+    rm -rf /usr/local/lib/node_modules/npm/node_modules/@isaacs/brace-expansion && \
+    rm -rf /usr/local/lib/node_modules/npm/node_modules/brace-expansion && \
+    rm -rf /usr/local/lib/node_modules/npm/node_modules/@isaacs/nonrecursive-glob-match && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/minimatch && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules/glob && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/tinyglobby/node_modules/picomatch && \
-    tar -xzf glob-11.1.0.tgz && \
+    tar -xzf glob-14.0.4.tgz && \
     cp -r package /usr/local/lib/node_modules/npm/node_modules/glob && \
     mkdir -p /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules && \
     cp -r package /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules/glob && \
     rm -rf package && \
+    tar -xzf path-scurry-3.0.0.tgz && \
+    mv package /usr/local/lib/node_modules/npm/node_modules/path-scurry && \
     tar -xzf tar-7.5.22.tgz && \
     mv package /usr/local/lib/node_modules/npm/node_modules/tar && \
-    tar -xzf minimatch-10.2.6.tgz && \
+    tar -xzf isaacs-brace-expansion-5.0.1.tgz && \
+    mkdir -p /usr/local/lib/node_modules/npm/node_modules/@isaacs && \
+    mv package /usr/local/lib/node_modules/npm/node_modules/@isaacs/brace-expansion && \
+    tar -xzf brace-expansion-5.0.12.tgz && \
+    mv package /usr/local/lib/node_modules/npm/node_modules/brace-expansion && \
+    tar -xzf isaacs-nonrecursive-glob-match-1.1.0.tgz && \
+    mv package /usr/local/lib/node_modules/npm/node_modules/@isaacs/nonrecursive-glob-match && \
+    tar -xzf minimatch-11.0.5.tgz && \
     mv package /usr/local/lib/node_modules/npm/node_modules/minimatch && \
     tar -xzf picomatch-4.0.7.tgz && \
     mkdir -p /usr/local/lib/node_modules/npm/node_modules/tinyglobby/node_modules && \
@@ -81,11 +98,39 @@ FROM node:24-alpine AS runtime
 
 WORKDIR /app
 
-# Upgrade npm to latest version and patch its bundled minimatch, picomatch, and tar
+# Upgrade npm to latest version and patch its bundled glob, minimatch, brace-expansion, picomatch, and tar
 RUN npm install -g npm@latest && \
-    cd /tmp && npm pack minimatch@10.2.6 && npm pack picomatch@4.0.7 && npm pack tar@7.5.22 && \
-    tar -xzf minimatch-10.2.6.tgz && \
+    cd /tmp && \
+    npm pack glob@14.0.4 && \
+    npm pack path-scurry@3.0.0 && \
+    npm pack @isaacs/brace-expansion@5.0.1 && \
+    npm pack brace-expansion@5.0.12 && \
+    npm pack @isaacs/nonrecursive-glob-match@1.1.0 && \
+    npm pack minimatch@11.0.5 && \
+    npm pack picomatch@4.0.7 && \
+    npm pack tar@7.5.22 && \
+    rm -rf /usr/local/lib/node_modules/npm/node_modules/glob && \
+    rm -rf /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules/glob && \
+    rm -rf /usr/local/lib/node_modules/npm/node_modules/path-scurry && \
+    rm -rf /usr/local/lib/node_modules/npm/node_modules/@isaacs/brace-expansion && \
+    rm -rf /usr/local/lib/node_modules/npm/node_modules/brace-expansion && \
+    rm -rf /usr/local/lib/node_modules/npm/node_modules/@isaacs/nonrecursive-glob-match && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/minimatch && \
+    tar -xzf glob-14.0.4.tgz && \
+    cp -r package /usr/local/lib/node_modules/npm/node_modules/glob && \
+    mkdir -p /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules && \
+    cp -r package /usr/local/lib/node_modules/npm/node_modules/node-gyp/node_modules/glob && \
+    rm -rf package && \
+    tar -xzf path-scurry-3.0.0.tgz && \
+    mv package /usr/local/lib/node_modules/npm/node_modules/path-scurry && \
+    tar -xzf isaacs-brace-expansion-5.0.1.tgz && \
+    mkdir -p /usr/local/lib/node_modules/npm/node_modules/@isaacs && \
+    mv package /usr/local/lib/node_modules/npm/node_modules/@isaacs/brace-expansion && \
+    tar -xzf brace-expansion-5.0.12.tgz && \
+    mv package /usr/local/lib/node_modules/npm/node_modules/brace-expansion && \
+    tar -xzf isaacs-nonrecursive-glob-match-1.1.0.tgz && \
+    mv package /usr/local/lib/node_modules/npm/node_modules/@isaacs/nonrecursive-glob-match && \
+    tar -xzf minimatch-11.0.5.tgz && \
     mv package /usr/local/lib/node_modules/npm/node_modules/minimatch && \
     tar -xzf picomatch-4.0.7.tgz && \
     rm -rf /usr/local/lib/node_modules/npm/node_modules/tinyglobby/node_modules/picomatch && \
@@ -97,20 +142,41 @@ RUN npm install -g npm@latest && \
     rm -rf /tmp/*
 
 # Install wrangler globally with security patches for its bundled dependencies
-# Wrangler bundles vulnerable versions of glob, cross-spawn, and brace-expansion
+# Wrangler bundles vulnerable versions of glob, cross-spawn, brace-expansion, minimatch, ip-address, and undici
 # We patch these by installing fixed versions that npm will use to satisfy wrangler's deps
 RUN npm install -g wrangler@latest && \
     # Patch all globally installed packages' vulnerable dependencies (npm, wrangler)
+    # Find and replace vulnerable minimatch versions
+    find /usr/local/lib/node_modules -type d -name "minimatch" -path "*/node_modules/*" | while read dir; do \
+        if [ -f "$dir/package.json" ]; then \
+            version=$(grep -o '"version": *"[^"]*"' "$dir/package.json" | head -1 | cut -d'"' -f4); \
+            case "$version" in \
+                [7-9].*|10.*|11.0.0) \
+                    parent_nm=$(dirname "$dir"); \
+                    (cd /tmp && \
+                     npm pack minimatch@11.0.5 && \
+                     npm pack brace-expansion@5.0.12 && \
+                     npm pack @isaacs/nonrecursive-glob-match@1.1.0 && \
+                     tar -xzf minimatch-11.0.5.tgz && rm -rf "$dir"/* && cp -r /tmp/package/* "$dir/" && rm -rf /tmp/package && \
+                     tar -xzf brace-expansion-5.0.12.tgz && rm -rf "$parent_nm/brace-expansion" && mv /tmp/package "$parent_nm/brace-expansion" && \
+                     tar -xzf isaacs-nonrecursive-glob-match-1.1.0.tgz && mkdir -p "$parent_nm/@isaacs" && rm -rf "$parent_nm/@isaacs/nonrecursive-glob-match" && mv /tmp/package "$parent_nm/@isaacs/nonrecursive-glob-match" && \
+                     rm -rf /tmp/*) ;; \
+            esac; \
+        fi; \
+    done && \
     # Find and replace vulnerable glob versions
     find /usr/local/lib/node_modules -type d -name "glob" -path "*/node_modules/*" | while read dir; do \
         if [ -f "$dir/package.json" ]; then \
             version=$(grep -o '"version": *"[^"]*"' "$dir/package.json" | head -1 | cut -d'"' -f4); \
             case "$version" in \
-                10.4.*|10.3.*|10.2.*) \
-                    (cd /tmp && npm pack glob@10.5.0 && tar -xzf glob-10.5.0.tgz) && \
-                    rm -rf "$dir"/* && \
-                    cp -r /tmp/package/* "$dir/" && \
-                    rm -rf /tmp/glob-* /tmp/package ;; \
+                9.*|1[0-3].*|14.0.[0-1]) \
+                    parent_nm=$(dirname "$dir"); \
+                    (cd /tmp && \
+                     npm pack glob@14.0.4 && \
+                     npm pack path-scurry@3.0.0 && \
+                     tar -xzf glob-14.0.4.tgz && rm -rf "$dir"/* && cp -r /tmp/package/* "$dir/" && rm -rf /tmp/package && \
+                     tar -xzf path-scurry-3.0.0.tgz && rm -rf "$parent_nm/path-scurry" && mv /tmp/package "$parent_nm/path-scurry" && \
+                     rm -rf /tmp/*) ;; \
             esac; \
         fi; \
     done && \
@@ -133,12 +199,12 @@ RUN npm install -g wrangler@latest && \
             version=$(grep -o '"version": *"[^"]*"' "$dir/package.json" | head -1 | cut -d'"' -f4); \
             case "$version" in \
                 2.0.0|2.0.1|2.0.2) \
-                    (cd /tmp && npm pack brace-expansion@2.1.2 && tar -xzf brace-expansion-2.1.2.tgz) && \
+                    (cd /tmp && npm pack brace-expansion@2.1.7 && tar -xzf brace-expansion-2.1.7.tgz) && \
                     rm -rf "$dir"/* && \
                     cp -r /tmp/package/* "$dir/" && \
                     rm -rf /tmp/brace-expansion-* /tmp/package ;; \
                 5.0.7|5.0.8) \
-                    (cd /tmp && npm pack brace-expansion@5.0.9 && tar -xzf brace-expansion-5.0.9.tgz) && \
+                    (cd /tmp && npm pack brace-expansion@5.0.12 && tar -xzf brace-expansion-5.0.12.tgz) && \
                     rm -rf "$dir"/* && \
                     cp -r /tmp/package/* "$dir/" && \
                     rm -rf /tmp/brace-expansion-* /tmp/package ;; \
@@ -151,7 +217,7 @@ RUN npm install -g wrangler@latest && \
             version=$(grep -o '"version": *"[^"]*"' "$dir/package.json" | head -1 | cut -d'"' -f4); \
             case "$version" in \
                 10.2.0|10.2.1|10.[3-6].*|10.7.[0-4]) \
-                    (cd /tmp && npm pack ip-address@10.7.5 && tar -xzf ip-address-10.7.5.tgz) && \
+                    (cd /tmp && npm pack ip-address@10.7.6 && tar -xzf ip-address-10.7.6.tgz) && \
                     rm -rf "$dir"/* && \
                     cp -r /tmp/package/* "$dir/" && \
                     rm -rf /tmp/ip-address-* /tmp/package ;; \
@@ -175,17 +241,15 @@ RUN npm install -g wrangler@latest && \
 
 # Install runtime dependencies only
 # Security Notes:
-# - curl 8.14.1-r2 has CVE-2025-10966 (MEDIUM) with no fix available yet (Alpine base package)
-# - busybox 1.37.0-r19 has CVE-2025-46394 & CVE-2024-58251 (LOW) with no fixes available yet (Alpine base package)
-# Alpine base package vulnerabilities (curl, busybox) are accepted risks with no available patches
-# - musl 1.2.6-r3 has CVE-2026-107891 (UNSPECIFIED severity); fix 1.2.6-r6 is not yet published to Alpine 3.24
-# We upgrade nghttp2 from edge main repo to resolve CVE-2026-58055
-# We also upgrade openssl (libcrypto3/libssl3), zlib, and musl to the latest Alpine patch releases
+# - Application dependencies: pruned to production-only via pnpm prune --prod; overrides in pnpm-workspace.yaml pin minimatch@11.0.5, glob@14.0.4, tar@7.5.22, picomatch@4.0.7, cross-spawn@7.0.6, flatted@3.4.4, undici@7.30.1
+# - Globally bundled dependencies (npm & wrangler): patched to glob@14.0.4 (with path-scurry@3.0.0), minimatch@11.0.5 (with brace-expansion@5.0.12 & @isaacs/nonrecursive-glob-match@1.1.0), @isaacs/brace-expansion@5.0.1, brace-expansion@2.1.7, tar@7.5.22, picomatch@4.0.7, cross-spawn@7.0.6, ip-address@10.7.6, and undici@6.29.1
+# - Alpine system packages: nghttp2 (>=1.70.0, CVE-2026-58055) and musl/musl-utils (1.2.6-r6, CVE-2026-107891) are upgraded from Alpine edge/main; openssl (libcrypto3/libssl3), zlib, curl, and ca-certificates are upgraded from the Alpine repository
 RUN apk add --no-cache nghttp2>=1.70.0 --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main && \
     apk add --no-cache \
     curl \
     ca-certificates && \
-    apk upgrade --no-cache libcrypto3 libssl3 zlib musl musl-utils
+    apk upgrade --no-cache libcrypto3 libssl3 zlib && \
+    apk upgrade --no-cache musl musl-utils --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
 
 # Create non-root user for security
 # Note: Alpine Linux uses GID 1000 for 'users' group, so we use a different GID
