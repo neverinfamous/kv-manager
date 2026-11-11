@@ -1,4 +1,5 @@
 import type { Env } from "../types";
+import { isLocalDevEnvironment } from "./cors";
 import {
   logInfo,
   logWarning,
@@ -14,7 +15,7 @@ export async function validateAccessJWT(
   request: Request,
   env: Env,
 ): Promise<string | null> {
-  const isLocalDev = new URL(request.url).hostname === "localhost";
+  const isLocalDev = isLocalDevEnvironment(request, env);
 
   // Try to get JWT from header first, then from cookie
   let token = request.headers.get("cf-access-jwt-assertion");

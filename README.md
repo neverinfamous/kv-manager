@@ -47,6 +47,10 @@ Browse namespaces with ease. Run bulk operations efficiently. Search across your
 ```bash
 docker pull writenotenow/kv-manager:latest
 
+# Mock development mode (no credentials required):
+docker run -d -p 8787:8787 --name kv-manager writenotenow/kv-manager:latest
+
+# With Cloudflare credentials & Access protection:
 docker run -d \
   -p 8787:8787 \
   -e ACCOUNT_ID=your_cloudflare_account_id \
@@ -116,7 +120,11 @@ wrangler secret put ACCOUNT_ID
 wrangler secret put API_KEY
 wrangler secret put TEAM_DOMAIN
 wrangler secret put POLICY_AUD
+# Optional: comma-separated list of additional trusted CORS origins (same-origin is allowed by default)
+# wrangler secret put ALLOWED_ORIGINS
 ```
+
+> **Note:** Keep `workers_dev = false` and `preview_urls = false` in `wrangler.toml` when deploying on a custom domain, or ensure your Cloudflare Access policy explicitly covers every reachable Worker hostname (including `*.workers.dev` and preview URLs if enabled).
 
 Build and deploy:
 
@@ -177,7 +185,8 @@ Modern, responsive design with dark/light theme support. Navigate between:
 ## 🔐 Security
 
 - Cloudflare Access JWT validation on all production API requests
-- Auth bypassed for localhost development
+- Strict CORS origin allowlist (`ALLOWED_ORIGINS` + same-origin default) and CSRF protection on state-changing API endpoints
+- Auth bypassed strictly in unauthenticated local mock development (`localhost` / `127.0.0.1` without production secrets)
 - Comprehensive audit logging
 - Protected namespaces hidden from UI
 

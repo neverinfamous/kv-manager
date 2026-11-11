@@ -63,14 +63,17 @@ Access at: http://localhost:8787
 
 ## ⚙️ Configuration
 
-### Required Environment Variables
+### Environment Variables
 
-| Variable      | Description                             |
-| ------------- | --------------------------------------- |
-| `ACCOUNT_ID`  | Cloudflare Account ID                   |
-| `API_KEY`     | API Token (KV + D1 Edit + Analytics Read permissions)    |
-| `TEAM_DOMAIN` | `https://yourteam.cloudflareaccess.com` |
-| `POLICY_AUD`  | Cloudflare Access AUD tag               |
+| Variable          | Required   | Description                                                                                     |
+| ----------------- | ---------- | ----------------------------------------------------------------------------------------------- |
+| `ACCOUNT_ID`      | Yes        | Cloudflare Account ID                                                                           |
+| `API_KEY`         | Yes        | API Token (KV + D1 Edit + Analytics Read permissions)                                           |
+| `TEAM_DOMAIN`     | Yes (prod) | `https://yourteam.cloudflareaccess.com`                                                         |
+| `POLICY_AUD`      | Yes (prod) | Cloudflare Access AUD tag                                                                       |
+| `ALLOWED_ORIGINS` | No         | Comma-separated list of additional trusted origins for credentialed CORS (same-origin default) |
+
+> **Local Mock Mode:** Running the container without `ACCOUNT_ID`/`API_KEY` and without `TEAM_DOMAIN`/`POLICY_AUD` (`docker run -p 8787:8787 writenotenow/kv-manager:latest`) enables local mock development mode on `localhost`/`127.0.0.1` with simulated data and bypassed JWT authentication. Whenever production credentials or Access variables are configured, valid Cloudflare Access JWT authentication is strictly enforced.
 
 ### Setup Steps
 

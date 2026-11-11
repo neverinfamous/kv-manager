@@ -66,6 +66,7 @@ When deploying KV Manager:
 ### Authentication
 
 - **Always use Cloudflare Access (Zero Trust)** in production
+- Keep `workers_dev = false` and `preview_urls = false` in `wrangler.toml` when deploying on a custom domain, or ensure your Cloudflare Access policy explicitly covers every reachable Worker hostname (including `*.workers.dev` and preview URLs if enabled)
 - Configure appropriate identity providers (GitHub OAuth, etc.)
 - Set restrictive access policies
 - Never disable authentication checks
@@ -74,7 +75,8 @@ When deploying KV Manager:
 
 - **Protect API tokens**: Never commit tokens to version control
 - Use Cloudflare Workers Secrets for sensitive data
-- Set proper CORS policies
+- **Strict CORS origin allowlist**: Credentialed CORS headers (`Access-Control-Allow-Origin` and `Access-Control-Allow-Credentials: true`) are only emitted for same-origin requests (`origin === url.origin`) or origins explicitly listed in `ALLOWED_ORIGINS` (plus `localhost` / `127.0.0.1` strictly in unauthenticated local mock development)
+- **Cross-origin CSRF protection**: Cross-origin state-changing API requests (`POST`, `PUT`, `PATCH`, `DELETE`) from untrusted origins are rejected with `403 Forbidden`
 - Implement rate limiting if needed
 
 ### KV Access
@@ -106,6 +108,8 @@ npx wrangler secret put ACCOUNT_ID
 npx wrangler secret put API_KEY
 npx wrangler secret put TEAM_DOMAIN
 npx wrangler secret put POLICY_AUD
+# Optional: comma-separated list of additional trusted CORS origins (same-origin is allowed by default)
+# npx wrangler secret put ALLOWED_ORIGINS
 ```
 
 ### Network Security
@@ -140,7 +144,7 @@ We monitor these vulnerabilities and will update as soon as patches become avail
 
 ### Local Development Mode
 
-- Mock data mode bypasses authentication for `localhost`
+- Local development authentication bypass (`localhost` / `127.0.0.1`) is strictly restricted to mock development mode when no production credentials (`ACCOUNT_ID`, `API_KEY`) or Cloudflare Access settings (`TEAM_DOMAIN`, `POLICY_AUD`) are configured, and is determined solely from the canonical request URL hostname (never from client-supplied headers such as `Origin`)
 - **Never deploy** with `VITE_WORKER_API=http://localhost:8787`
 - Ensure environment is properly configured for production
 
@@ -170,12 +174,20 @@ KV Manager implements several security features:
 
 - **Cloudflare Access Integration**: Enterprise-grade authentication
 - **JWT Validation**: Every API request validated
+- **Strict Origin & CSRF Protection**: Allowlist-validated CORS headers (`ALLOWED_ORIGINS`, `Vary: Origin`) and `403 Forbidden` rejection of untrusted cross-origin state-changing requests
 - **Scoped Permissions**: Minimal required access
 - **Audit Logging**: Operation history tracking
-- **Secure Defaults**: Production-ready configuration
+- **Secure Defaults**: Production-ready configuration (`workers_dev = false`, `preview_urls = false`)
 - **Input Validation**: Injection attack prevention
 - **Rate Limiting**: Via Cloudflare Workers platform
 - **Protected Namespaces**: System namespaces hidden from UI
+
+## Resolved Security Advisories (Sibling Hardening)
+
+| Reference | Summary | Status |
+| --------- | ------- | ------ |
+| [`GHSA-j3r9-4pwc-c8mh`](https://github.com/neverinfamous/R2-Manager-Worker/security/advisories/GHSA-j3r9-4pwc-c8mh) | Arbitrary `Origin` reflection with `Access-Control-Allow-Credentials: true` and cross-origin state-changing API requests | Patched (strict `ALLOWED_ORIGINS` allowlist + cross-origin `403 Forbidden` validation) |
+| [`GHSA-x3mg-rm2g-357p`](https://github.com/neverinfamous/R2-Manager-Worker/security/advisories/GHSA-x3mg-rm2g-357p) / [`GHSA-p483-22hw-9vjv`](https://github.com/neverinfamous/R2-Manager-Worker/security/advisories/GHSA-p483-22hw-9vjv) | Local development authentication bypass hardening & exposed Worker subdomain defaults (`workers_dev`, `preview_urls`) | Hardened (`isLocalDevEnvironment` requires no production/Access secrets; `workers_dev = false` and `preview_urls = false` by default) |
 
 ## Compliance
 

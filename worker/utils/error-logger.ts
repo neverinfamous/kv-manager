@@ -34,6 +34,7 @@ const ERROR_CODE_PREFIXES: Record<string, string> = {
   bulk: "BLK",
   webhooks: "WHK",
   auth: "AUTH",
+  cors: "CORS",
   admin: "ADM",
   r2_backup: "R2",
   worker: "WRK",

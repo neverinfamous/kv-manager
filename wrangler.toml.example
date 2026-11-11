@@ -5,14 +5,19 @@ name = "kv-manager"
 main = "worker/index.ts"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
+# Security: Keep workers_dev and preview_urls disabled in production when using a custom domain.
+# If enabled, ensure your Cloudflare Access policy explicitly covers the *.workers.dev and preview hostnames.
+workers_dev = false  # Set to true only if deploying without a custom domain and protecting *.workers.dev with Access
+preview_urls = false # Keep disabled unless preview URLs are also covered by Cloudflare Access
 
 # Build configuration for production
 [build]
 command = "npm run build"
 
-# Static assets binding (your built frontend)
-[site]
-bucket = "./dist"
+# Assets configuration - serve static files from dist/
+[assets]
+directory = "./dist"
+binding = "ASSETS"
 
 # Production D1 database
 [[d1_databases]]
@@ -51,6 +56,8 @@ ENVIRONMENT = "production"
 # API_KEY - Your Cloudflare API token
 # TEAM_DOMAIN - Your Cloudflare Access team domain (e.g., https://myteam.cloudflareaccess.com)
 # POLICY_AUD - Your Cloudflare Access policy AUD tag
+# ALLOWED_ORIGINS - (Optional) Comma-separated list of additional trusted origins for credentialed CORS
+#   (same-origin is allowed by default; e.g., "https://kv.yourdomain.com,https://admin.yourdomain.com")
 
 # Example KV namespace bindings (add as needed)
 # [[kv_namespaces]]

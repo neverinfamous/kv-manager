@@ -4,7 +4,8 @@ import { validateAccessJWT } from "./utils/auth";
 import {
   getCorsHeaders,
   handleCorsPreflightRequest,
-  isLocalDevelopment,
+  isLocalDevEnvironment,
+  validateCrossOriginRequest,
 } from "./utils/cors";
 import { logInfo, logError, createErrorContext } from "./utils/error-logger";
 import { handleNamespaceRoutes } from "./routes/namespaces";
@@ -31,6 +32,9 @@ import { processMonitoring } from "./utils/monitoring";
  */
 async function handleApiRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
+  // Detect local development strictly via request hostname and absence of production secrets / Access config
+  const isLocalDev = isLocalDevEnvironment(request, env);
+
   logInfo(
     `[Request] ${request.method} ${url.pathname}`,
     createErrorContext("worker", "handle_request", {
@@ -38,10 +42,10 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
     }),
   );
 
-  // Handle CORS
-  const corsHeaders = getCorsHeaders(request);
+  // Get CORS headers (only reflects explicitly trusted origins)
+  const corsHeaders = getCorsHeaders(request, isLocalDev, env.ALLOWED_ORIGINS);
   if (request.method === "OPTIONS") {
-    return handleCorsPreflightRequest(corsHeaders);
+    return handleCorsPreflightRequest(request, corsHeaders);
   }
 
   // If not an API request, serve static assets
@@ -50,13 +54,12 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
     return env.ASSETS.fetch(request) as unknown as Response;
   }
 
-  // Authentication
-  const isLocalhost = isLocalDevelopment(request);
+  // Authentication: skip auth only in local mock development without production credentials or Access config
   let userEmail: string | null;
 
-  if (isLocalhost) {
+  if (isLocalDev) {
     logInfo(
-      "Localhost detected, skipping JWT validation",
+      "Local development detected, skipping JWT validation",
       createErrorContext("auth", "check_auth"),
     );
     userEmail = "dev@localhost";
@@ -70,8 +73,16 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
     }
   }
 
-  // Check if we're in local dev mode (no credentials)
-  const isLocalDev = isLocalhost && (!env.ACCOUNT_ID || !env.API_KEY);
+  // Reject state-changing API requests from untrusted origins (CSRF / cross-origin protection)
+  const crossOriginBlock = validateCrossOriginRequest(
+    request,
+    url,
+    isLocalDev,
+    env.ALLOWED_ORIGINS,
+  );
+  if (crossOriginBlock !== null) {
+    return crossOriginBlock;
+  }
 
   // Route API requests
   // Handle namespace colors first (more specific route)
@@ -187,7 +198,16 @@ async function handleApiRequest(request: Request, env: Env): Promise<Response> {
     doUrl.pathname = `/download/${jobId}`;
     const doRequest = new Request(doUrl.toString(), request);
 
-    return await stub.fetch(doRequest);
+    const doResponse = (await stub.fetch(doRequest)) as unknown as Response;
+    const responseHeaders = new Headers(doResponse.headers);
+    for (const [key, value] of Object.entries(corsHeaders)) {
+      responseHeaders.set(key, value);
+    }
+    return new Response(doResponse.body, {
+      status: doResponse.status,
+      statusText: doResponse.statusText,
+      headers: responseHeaders,
+    });
   }
 
   if (
@@ -310,13 +330,18 @@ export default {
     try {
       return await handleApiRequest(request, env);
     } catch (err) {
+      const isLocalDev = isLocalDevEnvironment(request, env);
       await logError(
         env,
         err instanceof Error ? err : String(err),
         createErrorContext("worker", "unhandled_error"),
-        isLocalDevelopment(request),
+        isLocalDev,
       );
-      const corsHeaders = getCorsHeaders(request);
+      const corsHeaders = getCorsHeaders(
+        request,
+        isLocalDev,
+        env.ALLOWED_ORIGINS,
+      );
       return new Response(
         JSON.stringify({
           error: "Internal Server Error",
