@@ -54,7 +54,7 @@
     "globals": "^17.14.0",
     "picocolors": "^1.1.1",
     "postcss": "^8.5.32",
-    "tailwind-merge": "^3.7.0",
+    "tailwind-merge": "^3.7.1",
     "tailwindcss": "^4.3.5",
     "tailwindcss-animate": "^1.0.7",
     "ts-pattern": "^5.9.2",
